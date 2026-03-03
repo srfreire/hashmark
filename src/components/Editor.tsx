@@ -135,6 +135,27 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
   }, [filePath, editor]);
 
   useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (editor && saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        if (editor) {
+          const markdown = (editor.storage as Record<string, any>).markdown.getMarkdown();
+          onSaveStatusChange("saving");
+          writeFile(currentPathRef.current, markdown).then(() => {
+            onSaveStatusChange("saved");
+          });
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editor]);
+
+  useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
