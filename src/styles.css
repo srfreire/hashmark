@@ -94,3 +94,25 @@
   pointer-events: none;
   height: 0;
 }
+
+.dark .tiptap {
+  color: #e2e8f0;
+
+  pre {
+    background: #0f172a;
+  }
+
+  code {
+    background: #1e293b;
+    color: #f472b6;
+  }
+
+  blockquote {
+    border-left-color: #334155;
+    color: #94a3b8;
+  }
+
+  hr {
+    border-top-color: #334155;
+  }
+}

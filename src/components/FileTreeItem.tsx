@@ -18,7 +18,7 @@ export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: 
       <div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full text-left flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+          className="w-full text-left flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           style={{ paddingLeft }}
         >
           <span className="text-xs text-gray-400 w-4 flex-shrink-0">
@@ -44,8 +44,8 @@ export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: 
       onClick={() => onFileSelect(node.path)}
       className={`w-full text-left flex items-center gap-1.5 py-1 px-2 text-sm rounded transition-colors ${
         isActive
-          ? "bg-blue-50 text-blue-700 font-medium"
-          : "text-gray-700 hover:bg-gray-100"
+          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"
+          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
       }`}
       style={{ paddingLeft: paddingLeft + 16 }}
     >

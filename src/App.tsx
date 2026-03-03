@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
+import ThemeToggle from "./components/ThemeToggle";
 import { FileNode } from "./types";
 import { loadFileTree } from "./services/filesystem";
 
@@ -9,6 +10,11 @@ function App() {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+  }, [dark]);
 
   const refreshTree = useCallback(async (path: string) => {
     const tree = await loadFileTree(path);
@@ -33,7 +39,7 @@ function App() {
   const fileName = activeFile?.split("/").pop()?.replace(/\.md$/, "") ?? "";
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-white dark:bg-gray-900">
       <Sidebar
         files={files}
         activeFile={activeFile}
@@ -44,17 +50,20 @@ function App() {
       />
       <div className="flex-1 flex flex-col">
         {activeFile && (
-          <header className="h-12 border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0">
-            <h2 className="text-sm font-medium text-gray-700">{fileName}</h2>
-            <span className={`text-xs ${
-              saveStatus === "saved" ? "text-gray-400" :
-              saveStatus === "saving" ? "text-blue-500" :
-              "text-orange-500"
-            }`}>
-              {saveStatus === "saved" ? "Saved" :
-               saveStatus === "saving" ? "Saving..." :
-               "Unsaved changes"}
-            </span>
+          <header className="h-12 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 flex-shrink-0">
+            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-200">{fileName}</h2>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${
+                saveStatus === "saved" ? "text-gray-400" :
+                saveStatus === "saving" ? "text-blue-500" :
+                "text-orange-500"
+              }`}>
+                {saveStatus === "saved" ? "Saved" :
+                 saveStatus === "saving" ? "Saving..." :
+                 "Unsaved changes"}
+              </span>
+              <ThemeToggle dark={dark} onToggle={() => setDark(!dark)} />
+            </div>
           </header>
         )}
         <main className="flex-1 overflow-y-auto">
@@ -65,7 +74,7 @@ function App() {
               onSaveStatusChange={setSaveStatus}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
               <p>Select a file to start editing</p>
             </div>
           )}

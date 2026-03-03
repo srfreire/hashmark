@@ -30,14 +30,14 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
   }
 
   return (
-    <aside className="w-64 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0">
-      <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-gray-800">NoteMD</h1>
+    <aside className="w-64 h-screen border-r border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 flex flex-col flex-shrink-0">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">NoteMD</h1>
         <div className="flex gap-1">
           {rootPath && (
             <button
               onClick={() => setIsCreating(!isCreating)}
-              className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded text-sm"
+              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-sm"
               title="New file"
             >
               +
@@ -45,7 +45,7 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
           )}
           <button
             onClick={handleOpenFolder}
-            className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded text-sm"
+            className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-sm"
             title="Open folder"
           >
             📁
@@ -54,7 +54,7 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
       </div>
 
       {isCreating && (
-        <div className="p-2 border-b border-gray-200">
+        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
           <input
             autoFocus
             value={newFileName}
@@ -64,14 +64,14 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
               if (e.key === "Escape") setIsCreating(false);
             }}
             placeholder="filename.md"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-400"
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
           />
         </div>
       )}
 
       <nav className="flex-1 overflow-y-auto p-2">
         {!rootPath && (
-          <p className="text-sm text-gray-400 text-center mt-8 px-4">
+          <p className="text-sm text-gray-400 dark:text-gray-500 text-center mt-8 px-4">
             Open a folder to start editing Markdown files
           </p>
         )}
