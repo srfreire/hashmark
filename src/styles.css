@@ -5,3 +5,92 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+/* Tiptap editor styles */
+.tiptap {
+  > * + * {
+    margin-top: 0.75em;
+  }
+
+  h1 { font-size: 2em; font-weight: 700; line-height: 1.2; }
+  h2 { font-size: 1.5em; font-weight: 600; line-height: 1.3; }
+  h3 { font-size: 1.25em; font-weight: 600; line-height: 1.4; }
+
+  ul, ol { padding-left: 1.5em; }
+
+  ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5em;
+
+      label {
+        margin-top: 0.15em;
+      }
+
+      > div {
+        flex: 1;
+      }
+    }
+  }
+
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 0.5em;
+    padding: 1em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.875em;
+    overflow-x: auto;
+
+    code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+  }
+
+  code {
+    background: #f1f5f9;
+    color: #e11d48;
+    padding: 0.15em 0.4em;
+    border-radius: 0.25em;
+    font-size: 0.9em;
+  }
+
+  blockquote {
+    border-left: 3px solid #e2e8f0;
+    padding-left: 1em;
+    color: #64748b;
+    font-style: italic;
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid #e2e8f0;
+    margin: 2em 0;
+  }
+
+  a {
+    color: #3b82f6;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  img {
+    max-width: 100%;
+    border-radius: 0.5em;
+  }
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
