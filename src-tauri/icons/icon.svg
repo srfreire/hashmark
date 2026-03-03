@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1c1917"/>
+      <stop offset="100%" style="stop-color:#292524"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fafaf9"/>
+      <stop offset="100%" style="stop-color:#f5f5f4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" ry="104" fill="none" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+  <g transform="translate(110, 100)">
+    <rect x="0" y="0" width="48" height="312" rx="8" fill="url(#paper)" opacity="0.95"/>
+    <rect x="0" y="0" width="48" height="340" rx="8" fill="url(#paper)" opacity="0.95" transform="rotate(25, 24, 0) translate(40, -16)"/>
+    <rect x="244" y="0" width="48" height="312" rx="8" fill="url(#paper)" opacity="0.95"/>
+  </g>
+  <rect x="352" y="344" width="5" height="40" rx="2.5" fill="url(#amber)"/>
+  <circle cx="380" cy="400" r="8" fill="url(#amber)" opacity="0.6"/>
+</svg>

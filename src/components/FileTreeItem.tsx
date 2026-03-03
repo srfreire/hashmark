@@ -11,20 +11,22 @@ interface Props {
 export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: Props) {
   const [expanded, setExpanded] = useState(true);
   const isActive = node.path === activeFile;
-  const paddingLeft = 12 + depth * 16;
+  const indent = 8 + depth * 16;
 
   if (node.isDirectory) {
     return (
       <div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full text-left flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-          style={{ paddingLeft }}
+          className="tree-dir"
+          style={{ paddingLeft: indent }}
         >
-          <span className="text-xs text-gray-400 w-4 flex-shrink-0">
-            {expanded ? "▼" : "▶"}
+          <span className="tree-dir-icon">
+            {expanded ? "▾" : "▸"}
           </span>
-          <span className="truncate">{node.name}</span>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {node.name}
+          </span>
         </button>
         {expanded && node.children?.map((child) => (
           <FileTreeItem
@@ -42,15 +44,13 @@ export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: 
   return (
     <button
       onClick={() => onFileSelect(node.path)}
-      className={`w-full text-left flex items-center gap-1.5 py-1 px-2 text-sm rounded transition-colors ${
-        isActive
-          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"
-          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-      }`}
-      style={{ paddingLeft: paddingLeft + 16 }}
+      className={`tree-file ${isActive ? "active" : ""}`}
+      style={{ paddingLeft: indent + 20 }}
     >
-      <span className="text-gray-400 flex-shrink-0">📄</span>
-      <span className="truncate">{node.name.replace(/\.md$/, "")}</span>
+      <span className="tree-file-dot" />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {node.name.replace(/\.md$/, "")}
+      </span>
     </button>
   );
 }

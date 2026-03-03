@@ -37,29 +37,29 @@ export default forwardRef(function SlashMenu({ items, command }: Props, ref) {
     },
   }));
 
+  if (items.length === 0) {
+    return (
+      <div className="slash-menu">
+        <p className="slash-menu-empty">No results</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden w-56">
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-400 p-3">No results</p>
-      ) : (
-        items.map((item, index) => (
-          <button
-            key={item.title}
-            onClick={() => selectItem(index)}
-            className={`w-full text-left flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-              index === selectedIndex ? "bg-gray-100" : "hover:bg-gray-50"
-            }`}
-          >
-            <span className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-xs font-mono font-bold text-gray-600">
-              {item.icon}
-            </span>
-            <div>
-              <div className="font-medium text-gray-800">{item.title}</div>
-              <div className="text-xs text-gray-400">{item.description}</div>
-            </div>
-          </button>
-        ))
-      )}
+    <div className="slash-menu">
+      {items.map((item, index) => (
+        <button
+          key={item.title}
+          onClick={() => selectItem(index)}
+          className={`slash-menu-item ${index === selectedIndex ? "selected" : ""}`}
+        >
+          <span className="slash-menu-icon">{item.icon}</span>
+          <div className="slash-menu-text">
+            <div className="slash-menu-title">{item.title}</div>
+            <div className="slash-menu-desc">{item.description}</div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 });

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, ReactRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
@@ -9,7 +9,6 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
-import { ReactRenderer } from "@tiptap/react";
 import tippy, { Instance } from "tippy.js";
 import BubbleMenu from "./BubbleMenu";
 import SlashMenu from "./SlashMenu";
@@ -26,6 +25,7 @@ interface Props {
 export default function Editor({ filePath, onSaveStatusChange }: Props) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPathRef = useRef(filePath);
+  const initialContentRef = useRef<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -33,7 +33,7 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
         codeBlock: false,
       }),
       Placeholder.configure({
-        placeholder: "Type '/' for commands...",
+        placeholder: "Start writing, or type '/' for commands...",
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -41,7 +41,8 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
       Link.configure({ openOnClick: false }),
       Underline,
       Markdown.configure({
-        html: false,
+        html: true,
+        tightLists: true,
         transformPastedText: true,
         transformCopiedText: true,
       }),
@@ -99,7 +100,7 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
     ],
     editorProps: {
       attributes: {
-        class: "prose prose-gray max-w-none focus:outline-none min-h-[calc(100vh-4rem)] px-4 py-8",
+        class: "tiptap",
       },
     },
     onUpdate: ({ editor }) => {
@@ -108,41 +109,58 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
       saveTimeoutRef.current = setTimeout(async () => {
-        const markdownStorage = (editor.storage as Record<string, any>).markdown;
-        const markdown = markdownStorage.getMarkdown();
-        onSaveStatusChange("saving");
-        await writeFile(currentPathRef.current, markdown);
-        onSaveStatusChange("saved");
+        try {
+          const storage = editor.storage as Record<string, any>;
+          const markdown = storage.markdown.getMarkdown();
+          onSaveStatusChange("saving");
+          await writeFile(currentPathRef.current, markdown);
+          onSaveStatusChange("saved");
+        } catch (e) {
+          console.error("Auto-save failed:", e);
+          onSaveStatusChange("unsaved");
+        }
       }, 1000);
     },
   });
 
+  // Load file content when filePath changes
   useEffect(() => {
     currentPathRef.current = filePath;
 
     async function load() {
-      const content = await readFile(filePath);
-      if (editor) {
-        editor.commands.setContent(content, {
-          emitUpdate: false,
-          parseOptions: { preserveWhitespace: "full" },
-        });
+      try {
+        const content = await readFile(filePath);
+        initialContentRef.current = content;
+        if (editor) {
+          // Use the markdown parser directly from storage
+          const storage = editor.storage as Record<string, any>;
+          if (storage.markdown?.parser) {
+            const parsed = storage.markdown.parser.parse(content);
+            // Use the base setContent (bypassing the markdown wrapper which may double-parse)
+            editor.chain().setContent(parsed).run();
+          } else {
+            // Fallback: pass content directly and let the Markdown extension handle it
+            editor.chain().setContent(content).run();
+          }
+          onSaveStatusChange("saved");
+        }
+      } catch (e) {
+        console.error("Failed to load file:", e);
       }
-      onSaveStatusChange("saved");
     }
 
     if (editor) load();
   }, [filePath, editor]);
 
+  // Cmd+S manual save
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
-        if (editor && saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         if (editor) {
-          const markdown = (editor.storage as Record<string, any>).markdown.getMarkdown();
+          const storage = editor.storage as Record<string, any>;
+          const markdown = storage.markdown.getMarkdown();
           onSaveStatusChange("saving");
           writeFile(currentPathRef.current, markdown).then(() => {
             onSaveStatusChange("saved");
@@ -155,6 +173,7 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editor]);
 
+  // Cleanup
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -164,7 +183,7 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
   if (!editor) return null;
 
   return (
-    <div className="max-w-3xl mx-auto w-full">
+    <div className="editor-container">
       <BubbleMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>

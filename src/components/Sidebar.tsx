@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileNode } from "../types";
 import { selectFolder, createFile } from "../services/filesystem";
 import FileTreeItem from "./FileTreeItem";
@@ -10,11 +10,20 @@ interface Props {
   onFolderSelect: (path: string) => void;
   onFileSelect: (path: string) => void;
   onFileCreated: () => void;
+  showNewFile?: boolean;
+  onShowNewFileChange?: (show: boolean) => void;
 }
 
-export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, onFileSelect, onFileCreated }: Props) {
+export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, onFileSelect, onFileCreated, showNewFile, onShowNewFileChange }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+
+  useEffect(() => {
+    if (showNewFile && rootPath) {
+      setIsCreating(true);
+      onShowNewFileChange?.(false);
+    }
+  }, [showNewFile, rootPath, onShowNewFileChange]);
 
   async function handleOpenFolder() {
     const path = await selectFolder();
@@ -30,31 +39,36 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
   }
 
   return (
-    <aside className="w-64 h-screen border-r border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 flex flex-col flex-shrink-0">
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">NoteMD</h1>
-        <div className="flex gap-1">
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <h1>NoteMD</h1>
+        <div className="sidebar-actions">
           {rootPath && (
             <button
               onClick={() => setIsCreating(!isCreating)}
-              className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-sm"
+              className="sidebar-btn"
               title="New file"
             >
-              +
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <line x1="7" y1="3" x2="7" y2="11" />
+                <line x1="3" y1="7" x2="11" y2="7" />
+              </svg>
             </button>
           )}
           <button
             onClick={handleOpenFolder}
-            className="p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-sm"
+            className="sidebar-btn"
             title="Open folder"
           >
-            📁
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1.5 3.5v7a1 1 0 001 1h9a1 1 0 001-1v-5a1 1 0 00-1-1H7L5.5 2.5H2.5a1 1 0 00-1 1z" />
+            </svg>
           </button>
         </div>
       </div>
 
       {isCreating && (
-        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+        <div style={{ padding: "8px" }}>
           <input
             autoFocus
             value={newFileName}
@@ -64,15 +78,15 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
               if (e.key === "Escape") setIsCreating(false);
             }}
             placeholder="filename.md"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+            className="new-file-input"
           />
         </div>
       )}
 
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav className="sidebar-nav">
         {!rootPath && (
-          <p className="text-sm text-gray-400 dark:text-gray-500 text-center mt-8 px-4">
-            Open a folder to start editing Markdown files
+          <p className="sidebar-empty">
+            Open a folder to start editing your Markdown files
           </p>
         )}
         {files.map((node) => (

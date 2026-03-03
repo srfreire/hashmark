@@ -1,118 +1,599 @@
 @import "tailwindcss";
 
+:root {
+  --bg-app: #fafaf9;
+  --bg-sidebar: #f5f5f4;
+  --bg-sidebar-hover: #e7e5e4;
+  --bg-sidebar-active: #e2e0de;
+  --bg-editor: #fafaf9;
+  --border: #e7e5e4;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-tertiary: #a8a29e;
+  --text-accent: #b45309;
+  --accent: #d97706;
+  --accent-soft: #fef3c7;
+  --code-bg: #292524;
+  --code-text: #e7e5e4;
+  --inline-code-bg: #f5f0eb;
+  --inline-code-text: #9a3412;
+  --blockquote-border: #d6d3d1;
+  --blockquote-text: #78716c;
+  --link: #2563eb;
+}
+
+.dark {
+  --bg-app: #1a1a1a;
+  --bg-sidebar: #141414;
+  --bg-sidebar-hover: #262626;
+  --bg-sidebar-active: #2a2a2a;
+  --bg-editor: #1a1a1a;
+  --border: #2e2e2e;
+  --text-primary: #e5e5e5;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #525252;
+  --text-accent: #fbbf24;
+  --accent: #f59e0b;
+  --accent-soft: #422006;
+  --code-bg: #0f0f0f;
+  --code-text: #d4d4d4;
+  --inline-code-bg: #262626;
+  --inline-code-text: #fb923c;
+  --blockquote-border: #404040;
+  --blockquote-text: #737373;
+  --link: #60a5fa;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Tiptap editor styles */
-.tiptap {
-  > * + * {
-    margin-top: 0.75em;
-  }
-
-  h1 { font-size: 2em; font-weight: 700; line-height: 1.2; }
-  h2 { font-size: 1.5em; font-weight: 600; line-height: 1.3; }
-  h3 { font-size: 1.25em; font-weight: 600; line-height: 1.4; }
-
-  ul, ol { padding-left: 1.5em; }
-
-  ul[data-type="taskList"] {
-    list-style: none;
-    padding-left: 0;
-
-    li {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5em;
-
-      label {
-        margin-top: 0.15em;
-      }
-
-      > div {
-        flex: 1;
-      }
-    }
-  }
-
-  pre {
-    background: #1e1e2e;
-    color: #cdd6f4;
-    border-radius: 0.5em;
-    padding: 1em;
-    font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 0.875em;
-    overflow-x: auto;
-
-    code {
-      background: none;
-      color: inherit;
-      padding: 0;
-      font-size: inherit;
-    }
-  }
-
-  code {
-    background: #f1f5f9;
-    color: #e11d48;
-    padding: 0.15em 0.4em;
-    border-radius: 0.25em;
-    font-size: 0.9em;
-  }
-
-  blockquote {
-    border-left: 3px solid #e2e8f0;
-    padding-left: 1em;
-    color: #64748b;
-    font-style: italic;
-  }
-
-  hr {
-    border: none;
-    border-top: 2px solid #e2e8f0;
-    margin: 2em 0;
-  }
-
-  a {
-    color: #3b82f6;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  img {
-    max-width: 100%;
-    border-radius: 0.5em;
-  }
+html, body, #root {
+  height: 100%;
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ---- Sidebar ---- */
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* macOS drag region */
+.drag-region {
+  -webkit-app-region: drag;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 100;
+}
+
+.drag-region-interactive {
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-header {
+  padding: 14px 16px;
+  padding-top: 42px; /* Space for macOS traffic lights */
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-header h1 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.sidebar-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.sidebar-btn:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-secondary);
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.sidebar-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 48px;
+  padding: 0 20px;
+  line-height: 1.5;
+}
+
+.tree-dir {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+  font-family: inherit;
+}
+
+.tree-dir:hover { background: var(--bg-sidebar-hover); }
+
+.tree-dir-icon {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.tree-file {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+
+.tree-file:hover { background: var(--bg-sidebar-hover); }
+
+.tree-file.active {
+  background: var(--bg-sidebar-active);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tree-file-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.tree-file.active .tree-file-dot {
+  background: var(--accent);
+}
+
+.new-file-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+  margin: 4px 0;
+}
+
+/* ---- Editor Area ---- */
+.editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor-topbar {
+  height: 44px;
+  padding-top: 28px; /* Space for macOS titlebar overlay */
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 20px;
+  padding-right: 20px;
+  flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  box-sizing: content-box;
+}
+
+.editor-filename {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.editor-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-status {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.save-status.saved { color: var(--text-tertiary); }
+.save-status.saving { color: var(--accent); }
+.save-status.unsaved { color: #ef4444; }
+
+.theme-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.15s;
+}
+
+.theme-btn:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-secondary);
+}
+
+.editor-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.editor-container {
+  width: 100%;
+  max-width: 720px;
+  padding: 40px 24px 120px;
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-tertiary);
+}
+
+.empty-state-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ---- Tiptap Editor ---- */
+.tiptap {
+  outline: none;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  caret-color: var(--accent);
+}
+
+.tiptap > * + * {
+  margin-top: 0.5em;
+}
+
+.tiptap h1 {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1.5em;
+  margin-bottom: 0.3em;
+  letter-spacing: -0.02em;
+}
+
+.tiptap h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.4em;
+  margin-bottom: 0.2em;
+  letter-spacing: -0.01em;
+}
+
+.tiptap h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1.2em;
+  margin-bottom: 0.2em;
+}
+
+.tiptap h1:first-child,
+.tiptap h2:first-child,
+.tiptap h3:first-child {
+  margin-top: 0;
+}
+
+.tiptap p {
+  margin: 0;
+}
+
+.tiptap ul, .tiptap ol {
+  padding-left: 1.6em;
+}
+
+.tiptap li {
+  margin: 0.2em 0;
+}
+
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tiptap ul[data-type="taskList"] li label {
+  margin-top: 3px;
+}
+
+.tiptap ul[data-type="taskList"] li label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.tiptap ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+.tiptap pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: 'IBM Plex Mono', 'Fira Code', monospace;
+  font-size: 0.875em;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+
+.tiptap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+.tiptap code {
+  background: var(--inline-code-bg);
+  color: var(--inline-code-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88em;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid var(--blockquote-border);
+  padding-left: 16px;
+  color: var(--blockquote-text);
+  font-style: italic;
+  margin: 0.8em 0;
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.tiptap a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.tiptap a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.tiptap img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.8em 0;
+}
+
+.tiptap strong {
+  font-weight: 600;
+}
+
+/* Placeholder */
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   pointer-events: none;
   height: 0;
+  font-style: italic;
 }
 
-.dark .tiptap {
-  color: #e2e8f0;
+/* ---- Bubble Menu ---- */
+.bubble-menu {
+  background: var(--code-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
 
-  pre {
-    background: #0f172a;
-  }
+.bubble-btn {
+  width: 30px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: #a8a29e;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.1s;
+  font-family: 'IBM Plex Mono', monospace;
+}
 
-  code {
-    background: #1e293b;
-    color: #f472b6;
-  }
+.bubble-btn:hover {
+  color: #e7e5e4;
+  background: rgba(255,255,255,0.08);
+}
 
-  blockquote {
-    border-left-color: #334155;
-    color: #94a3b8;
-  }
+.bubble-btn.active {
+  color: #fafaf9;
+  background: rgba(255,255,255,0.12);
+}
 
-  hr {
-    border-top-color: #334155;
-  }
+.bubble-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 2px;
+}
+
+/* ---- Slash Menu ---- */
+.slash-menu {
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  overflow: hidden;
+  width: 240px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  padding: 4px;
+}
+
+.slash-menu-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-family: inherit;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.selected {
+  background: var(--bg-sidebar-hover);
+}
+
+.slash-menu-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.slash-menu-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.slash-menu-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.slash-menu-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.slash-menu-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 12px 16px;
 }
