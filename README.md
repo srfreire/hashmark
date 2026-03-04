@@ -22,20 +22,24 @@
   <img src="screenshot.png" width="720" />
 </p>
 
+<br />
+
 <p align="center">
-  Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting<br />
-  Find & replace across files · Modified file indicators · Dark & light themes · Native macOS app
+  <img src="https://img.shields.io/badge/⌘S-Save-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘⇧S-Save_All-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘N-New_File-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘O-Open_Folder-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘B-Sidebar-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘F-Find-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/⌘⇧F-Find_in_Files-292524?style=flat-square&labelColor=44403c" />
+  <img src="https://img.shields.io/badge/%2F-Slash_Commands-292524?style=flat-square&labelColor=44403c" />
 </p>
 
 <br />
 
 <p align="center">
-  <code>⌘S</code> Save &nbsp;
-  <code>⌘⇧S</code> Save all &nbsp;
-  <code>⌘N</code> New file &nbsp;
-  <code>⌘O</code> Open folder &nbsp;
-  <code>⌘B</code> Toggle sidebar &nbsp;
-  <code>⌘F</code> Find &nbsp;
-  <code>⌘⇧F</code> Find in files &nbsp;
-  <code>/</code> Slash commands
+  <sub>
+    Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting · Tables<br />
+    Find & replace across files · Modified file indicators · Dark & light themes · Native macOS
+  </sub>
 </p>
