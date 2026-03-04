@@ -26,20 +26,18 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/⌘S-Save-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘⇧S-Save_All-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘N-New_File-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘O-Open_Folder-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘B-Sidebar-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘F-Find-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/⌘⇧F-Find_in_Files-292524?style=flat-square&labelColor=44403c" />
+  &nbsp;
   <img src="https://img.shields.io/badge/%2F-Slash_Commands-292524?style=flat-square&labelColor=44403c" />
-</p>
-
-<br />
-
-<p align="center">
-  <sub>
-    Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting · Tables<br />
-    Find & replace across files · Modified file indicators · Dark & light themes · Native macOS
-  </sub>
 </p>
