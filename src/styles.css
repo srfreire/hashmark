@@ -310,7 +310,6 @@ html, body, #root {
   width: 100%;
   max-width: 720px;
   padding: 40px 24px;
-  margin-bottom: 50vh;
 }
 
 .empty-state {
@@ -340,6 +339,7 @@ html, body, #root {
   line-height: 1.7;
   color: var(--text-primary);
   caret-color: var(--accent);
+  padding-bottom: 50vh;
 }
 
 .tiptap > * + * {
