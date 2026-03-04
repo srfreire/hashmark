@@ -621,18 +621,18 @@ html, body, #root {
 
 /* ---- Find Bar ---- */
 .find-bar {
-  border-bottom: 1px solid var(--border);
-  padding: 8px 12px;
+  padding: 8px 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
-  background: var(--bg-editor);
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .find-bar-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .find-bar-replace-row {
@@ -650,8 +650,8 @@ html, body, #root {
   color: var(--text-tertiary);
   cursor: pointer;
   font-size: 10px;
-  border-radius: 4px;
-  transition: transform 0.15s;
+  border-radius: 6px;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
 
@@ -671,115 +671,115 @@ html, body, #root {
 .find-bar-input {
   flex: 1;
   min-width: 0;
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-app);
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-sidebar-hover);
   color: var(--text-primary);
   outline: none;
   font-family: inherit;
+  transition: background 0.15s;
 }
 
 .find-bar-input:focus {
-  border-color: var(--accent);
+  background: var(--bg-sidebar-active);
 }
 
 .find-bar-option {
   width: 26px;
-  height: 24px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
+  border: none;
   background: none;
   color: var(--text-tertiary);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
   font-family: 'IBM Plex Mono', monospace;
-  transition: all 0.12s;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
 
 .find-bar-option:hover {
   color: var(--text-secondary);
-  background: var(--bg-sidebar-hover);
+  background: rgba(255,255,255,0.06);
 }
 
 .find-bar-option.active {
   color: var(--accent);
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  background: rgba(255,255,255,0.08);
 }
 
 .find-bar-count {
   font-size: 11px;
   color: var(--text-tertiary);
   font-family: 'IBM Plex Mono', monospace;
-  min-width: 60px;
+  min-width: 56px;
   text-align: center;
   flex-shrink: 0;
 }
 
 .find-bar-nav {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: none;
   color: var(--text-tertiary);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 9px;
-  transition: all 0.12s;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
 
 .find-bar-nav:hover {
-  background: var(--bg-sidebar-hover);
+  background: rgba(255,255,255,0.06);
   color: var(--text-secondary);
 }
 
 .find-bar-close {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: none;
   color: var(--text-tertiary);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 11px;
-  transition: all 0.12s;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
 
 .find-bar-close:hover {
-  background: var(--bg-sidebar-hover);
+  background: rgba(255,255,255,0.06);
   color: var(--text-secondary);
 }
 
 .find-bar-action {
-  padding: 3px 10px;
+  padding: 4px 12px;
   font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: none;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
   color: var(--text-secondary);
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.12s;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
 
 .find-bar-action:hover {
-  background: var(--bg-sidebar-hover);
+  background: rgba(255,255,255,0.1);
   color: var(--text-primary);
 }
 

@@ -85,9 +85,8 @@ export default function Sidebar({
               title="Open folder"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1.5 4v6.5a1 1 0 001 1h9a1 1 0 001-1V6a1 1 0 00-1-1H7L5.5 3H2.5a1 1 0 00-1 1z" />
-                <line x1="7" y1="7" x2="7" y2="10" />
-                <line x1="5.5" y1="8.5" x2="8.5" y2="8.5" />
+                <path d="M2 10V4a1 1 0 011-1h3l1.5 1.5H11a1 1 0 011 1V10a1 1 0 01-1 1H3a1 1 0 01-1-1z" />
+                <path d="M5 8.5h4M7 6.5v4" />
               </svg>
             </button>
             {rootPath && (
