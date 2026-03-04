@@ -22,10 +22,20 @@
   <img src="screenshot.png" width="720" />
 </p>
 
----
+<p align="center">
+  Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting<br />
+  Find & replace across files · Modified file indicators · Dark & light themes · Native macOS app
+</p>
 
-`Cmd+S` Save · `Cmd+Shift+S` Save all · `Cmd+N` New file · `Cmd+O` Open folder · `Cmd+B` Toggle sidebar · `Cmd+F` Find · `Cmd+Shift+F` Find in files · `/` Slash commands
+<br />
 
----
-
-Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting · Find & replace across files · Modified file indicators · Dark & light themes with animated transition · Native macOS app
+<p align="center">
+  <code>⌘S</code> Save &nbsp;
+  <code>⌘⇧S</code> Save all &nbsp;
+  <code>⌘N</code> New file &nbsp;
+  <code>⌘O</code> Open folder &nbsp;
+  <code>⌘B</code> Toggle sidebar &nbsp;
+  <code>⌘F</code> Find &nbsp;
+  <code>⌘⇧F</code> Find in files &nbsp;
+  <code>/</code> Slash commands
+</p>
