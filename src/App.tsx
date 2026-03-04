@@ -13,6 +13,8 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const [dark, setDark] = useState(true);
   const [showNewFile, setShowNewFile] = useState(false);
+  const [sidebarView, setSidebarView] = useState<"files" | "search">("files");
+  const [pendingSearchTerm, setPendingSearchTerm] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -37,11 +39,31 @@ function App() {
   function handleFileSelect(path: string) {
     setActiveFile(path);
     setSaveStatus("saved");
+    setPendingSearchTerm(undefined);
   }
 
   function handleFileCreated() {
     if (rootPath) refreshTree(rootPath);
   }
+
+  const handleOpenFileAtMatch = useCallback((filePath: string, searchTerm: string) => {
+    setActiveFile(filePath);
+    setPendingSearchTerm(searchTerm);
+    setSaveStatus("saved");
+  }, []);
+
+  // Cmd+Shift+F global keyboard listener
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "f") {
+        e.preventDefault();
+        setSidebarView("search");
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Listen for native menu events
   useEffect(() => {
@@ -58,6 +80,15 @@ function App() {
     listen("menu-save", () => {
       // Cmd+S is handled by the Editor component directly
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "s", metaKey: true }));
+    }).then((fn) => unlisten.push(fn));
+
+    listen("menu-find", () => {
+      // Cmd+F: open in-editor find bar (dispatched as keyboard event)
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true }));
+    }).then((fn) => unlisten.push(fn));
+
+    listen("menu-find-in-files", () => {
+      setSidebarView("search");
     }).then((fn) => unlisten.push(fn));
 
     return () => {
@@ -80,6 +111,9 @@ function App() {
         onFileCreated={handleFileCreated}
         showNewFile={showNewFile}
         onShowNewFileChange={setShowNewFile}
+        sidebarView={sidebarView}
+        onSidebarViewChange={setSidebarView}
+        onOpenFileAtMatch={handleOpenFileAtMatch}
       />
       <div className="editor-area">
         {activeFile ? (
@@ -107,6 +141,7 @@ function App() {
               key={activeFile}
               filePath={activeFile}
               onSaveStatusChange={setSaveStatus}
+              searchTerm={pendingSearchTerm}
             />
           ) : (
             <div className="empty-state">
