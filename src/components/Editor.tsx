@@ -32,14 +32,37 @@ interface Props {
   initialContent?: string;
   searchTerm?: string;
   onFindBarVisibilityChange?: (visible: boolean) => void;
+  onWordCountChange?: (count: number) => void;
+  onHeadingsChange?: (headings: Array<{ level: number; text: string; pos: number }>) => void;
+  onEditorReady?: (scrollToPos: (pos: number) => void) => void;
 }
 
-export default function Editor({ filePath, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange }: Props) {
+export default function Editor({ filePath, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange, onWordCountChange, onHeadingsChange, onEditorReady }: Props) {
   const currentPathRef = useRef(filePath);
   const initialContentRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
   const [findBarVisible, setFindBarVisible] = useState(false);
   const [initialSearchTerm, setInitialSearchTerm] = useState<string | undefined>(undefined);
+
+  const onWordCountChangeRef = useRef(onWordCountChange);
+  onWordCountChangeRef.current = onWordCountChange;
+  const onHeadingsChangeRef = useRef(onHeadingsChange);
+  onHeadingsChangeRef.current = onHeadingsChange;
+
+  function computeWordCount(doc: any) {
+    const text = doc.textContent?.trim() ?? "";
+    return text.length === 0 ? 0 : text.split(/\s+/).filter((w: string) => w.length > 0).length;
+  }
+
+  function extractHeadings(doc: any) {
+    const headings: Array<{ level: number; text: string; pos: number }> = [];
+    doc.descendants((node: any, pos: number) => {
+      if (node.type.name === "heading") {
+        headings.push({ level: node.attrs.level, text: node.textContent, pos });
+      }
+    });
+    return headings;
+  }
 
   const editor = useEditor({
     extensions: [
@@ -128,8 +151,24 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
       const storage = editor.storage as Record<string, any>;
       const markdown = storage.markdown.getMarkdown();
       onContentChange?.(currentPathRef.current, markdown);
+      onWordCountChangeRef.current?.(computeWordCount(editor.state.doc));
+      onHeadingsChangeRef.current?.(extractHeadings(editor.state.doc));
     },
   });
+
+  // Provide scroll-to-position function to parent
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      onEditorReady((pos: number) => {
+        const resolvedPos = Math.min(pos, editor.state.doc.content.size - 1);
+        editor.commands.focus();
+        editor.commands.setTextSelection(resolvedPos);
+        const dom = editor.view.domAtPos(resolvedPos);
+        const node = dom.node instanceof HTMLElement ? dom.node : dom.node.parentElement;
+        node?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [editor, onEditorReady]);
 
   // Load file content when filePath changes
   useEffect(() => {
@@ -155,6 +194,8 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
           isLoadingRef.current = false;
           // If loaded from buffer, it's still unsaved
           onSaveStatusChange(initialContent !== undefined ? "unsaved" : "saved");
+          onWordCountChangeRef.current?.(computeWordCount(editor.state.doc));
+          onHeadingsChangeRef.current?.(extractHeadings(editor.state.doc));
         }
       } catch (e) {
         console.error("Failed to load file:", e);

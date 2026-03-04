@@ -26,6 +26,9 @@ src/
     SlashMenu.tsx            # Slash command dropdown menu
     FileTreeItem.tsx         # Recursive file/folder tree item
     ThemeToggle.tsx          # Light/dark mode toggle button
+    QuickOpen.tsx            # Cmd+P fuzzy file finder overlay
+    CommandPalette.tsx       # Cmd+Shift+P command palette overlay
+    TabBar.tsx               # Editor tabs with drag & drop reordering
   extensions/
     search-and-replace.ts    # Custom Tiptap extension: ProseMirror decorations for search highlights
     slash-command.ts         # Tiptap suggestion extension for "/" commands
@@ -104,7 +107,11 @@ npm run tauri build  # Production build → src-tauri/target/release/bundle/maco
 | Cmd+S | Save |
 | Cmd+N | New file |
 | Cmd+O | Open folder |
-| Escape | Close FindBar / cancel new file input |
+| Cmd+P | Quick Open (fuzzy file finder) |
+| Cmd+Shift+P | Command Palette |
+| Cmd+W | Close active tab |
+| Cmd+T | New file (sidebar) |
+| Escape | Close FindBar / cancel new file input / close overlays |
 
 ## Theme Variables
 

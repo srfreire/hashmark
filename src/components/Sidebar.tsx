@@ -3,6 +3,7 @@ import { FileNode } from "../types";
 import { createFile } from "../services/filesystem";
 import FileTreeItem from "./FileTreeItem";
 import GlobalSearch from "./GlobalSearch";
+import OutlineView from "./OutlineView";
 
 interface Props {
   files: FileNode[];
@@ -15,10 +16,13 @@ interface Props {
   onFileCreated: () => void;
   showNewFile?: boolean;
   onShowNewFileChange?: (show: boolean) => void;
-  sidebarView: "files" | "search";
-  onSidebarViewChange: (view: "files" | "search") => void;
+  sidebarView: "files" | "search" | "outline";
+  onSidebarViewChange: (view: "files" | "search" | "outline") => void;
   onOpenFileAtMatch: (filePath: string, searchTerm: string) => void;
   modifiedFiles?: Set<string>;
+  gitStatuses?: Map<string, string>;
+  headings?: Array<{ level: number; text: string; pos: number }>;
+  onHeadingClick?: (pos: number) => void;
 }
 
 export default function Sidebar({
@@ -36,6 +40,9 @@ export default function Sidebar({
   onSidebarViewChange,
   onOpenFileAtMatch,
   modifiedFiles,
+  gitStatuses,
+  headings,
+  onHeadingClick,
 }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState("");
@@ -77,6 +84,18 @@ export default function Sidebar({
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <circle cx="6" cy="6" r="4" />
               <line x1="9" y1="9" x2="12" y2="12" />
+            </svg>
+          </button>
+          <button
+            onClick={() => onSidebarViewChange("outline")}
+            className={`sidebar-btn${sidebarView === "outline" ? " sidebar-btn-active" : ""}`}
+            title="Outline"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="21" y1="10" x2="7" y2="10" />
+              <line x1="21" y1="6" x2="3" y2="6" />
+              <line x1="21" y1="14" x2="3" y2="14" />
+              <line x1="21" y1="18" x2="7" y2="18" />
             </svg>
           </button>
           <button
@@ -155,10 +174,18 @@ export default function Sidebar({
                 activeFile={activeFile}
                 onFileSelect={onFileSelect}
                 modifiedFiles={modifiedFiles}
+                gitStatuses={gitStatuses}
               />
             ))}
           </nav>
         </>
+      )}
+
+      {sidebarView === "outline" && (
+        <OutlineView
+          headings={headings ?? []}
+          onHeadingClick={(pos) => onHeadingClick?.(pos)}
+        />
       )}
 
       {sidebarView === "search" && (

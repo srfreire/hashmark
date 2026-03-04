@@ -1,5 +1,6 @@
-import { readDir, readTextFile, writeTextFile, mkdir, remove, rename, DirEntry } from "@tauri-apps/plugin-fs";
+import { readDir, readTextFile, writeTextFile, mkdir, remove, rename, stat, DirEntry } from "@tauri-apps/plugin-fs";
 import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import { FileNode, SearchMatch, FileSearchResult } from "../types";
 
 export async function selectFolder(): Promise<string | null> {
@@ -153,6 +154,20 @@ export async function searchInFiles(
   }
 
   return results;
+}
+
+export async function getFileMtime(filePath: string): Promise<number> {
+  const meta = await stat(filePath);
+  return meta.mtime?.getTime() ?? 0;
+}
+
+export async function getGitRoot(rootPath: string): Promise<string | null> {
+  return invoke<string | null>("get_git_root", { repoPath: rootPath });
+}
+
+export async function getGitStatus(rootPath: string): Promise<Map<string, string>> {
+  const result = await invoke<Record<string, string>>("get_git_status", { repoPath: rootPath });
+  return new Map(Object.entries(result));
 }
 
 export async function replaceInFile(

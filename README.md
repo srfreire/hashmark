@@ -39,5 +39,9 @@
   &nbsp;
   <a href="#"><img src="https://img.shields.io/badge/⌘⇧F-Find_in_Files-292524?style=flat-square&labelColor=44403c" /></a>
   &nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/⌘P-Quick_Open-292524?style=flat-square&labelColor=44403c" /></a>
+  &nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/⌘⇧P-Command_Palette-292524?style=flat-square&labelColor=44403c" /></a>
+  &nbsp;
   <a href="#"><img src="https://img.shields.io/badge/%2F-Slash_Commands-292524?style=flat-square&labelColor=44403c" /></a>
 </p>

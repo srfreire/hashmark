@@ -1,5 +1,78 @@
+use std::collections::HashMap;
+use std::process::Command;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Emitter;
+
+#[tauri::command]
+fn get_git_root(repo_path: String) -> Result<Option<String>, String> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        let root = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok(Some(root))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+fn get_git_status(repo_path: String) -> Result<HashMap<String, String>, String> {
+    let root_output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if !root_output.status.success() {
+        return Ok(HashMap::new());
+    }
+
+    let git_root = String::from_utf8_lossy(&root_output.stdout).trim().to_string();
+
+    let output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        return Ok(HashMap::new());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut statuses = HashMap::new();
+
+    for line in stdout.lines() {
+        if line.len() < 4 {
+            continue;
+        }
+        let status_code = &line[0..2];
+        let file_path = &line[3..];
+        // Handle renamed files: "R  old -> new"
+        let file_path = if let Some(pos) = file_path.find(" -> ") {
+            &file_path[pos + 4..]
+        } else {
+            file_path
+        };
+
+        let full_path = format!("{}/{}", git_root, file_path);
+
+        let status = match status_code {
+            "??" => "untracked",
+            " D" | "D " | "DD" => "deleted",
+            "A " | "AM" | "A?" => "added",
+            _ => "modified",
+        };
+
+        statuses.insert(full_path, status.to_string());
+    }
+
+    Ok(statuses)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -7,6 +80,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![get_git_status, get_git_root])
         .setup(|app| {
             let open_folder = MenuItemBuilder::with_id("open_folder", "Open Folder...")
                 .accelerator("CmdOrCtrl+O")
