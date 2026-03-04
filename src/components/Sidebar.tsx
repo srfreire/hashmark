@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileNode } from "../types";
 import { selectFolder, createFile } from "../services/filesystem";
 import FileTreeItem from "./FileTreeItem";
+import GlobalSearch from "./GlobalSearch";
 
 interface Props {
   files: FileNode[];
@@ -12,9 +13,24 @@ interface Props {
   onFileCreated: () => void;
   showNewFile?: boolean;
   onShowNewFileChange?: (show: boolean) => void;
+  sidebarView: "files" | "search";
+  onSidebarViewChange: (view: "files" | "search") => void;
+  onOpenFileAtMatch: (filePath: string, searchTerm: string) => void;
 }
 
-export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, onFileSelect, onFileCreated, showNewFile, onShowNewFileChange }: Props) {
+export default function Sidebar({
+  files,
+  activeFile,
+  rootPath,
+  onFolderSelect,
+  onFileSelect,
+  onFileCreated,
+  showNewFile,
+  onShowNewFileChange,
+  sidebarView,
+  onSidebarViewChange,
+  onOpenFileAtMatch,
+}: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState("");
 
@@ -41,9 +57,28 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h1>NoteMD</h1>
+        <h1>Hashmark</h1>
         <div className="sidebar-actions">
-          {rootPath && (
+          <button
+            onClick={() => onSidebarViewChange("files")}
+            className={`sidebar-btn${sidebarView === "files" ? " sidebar-btn-active" : ""}`}
+            title="Files"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1.5 3.5v7a1 1 0 001 1h9a1 1 0 001-1v-5a1 1 0 00-1-1H7L5.5 2.5H2.5a1 1 0 00-1 1z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => onSidebarViewChange("search")}
+            className={`sidebar-btn${sidebarView === "search" ? " sidebar-btn-active" : ""}`}
+            title="Search"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="6" cy="6" r="4" />
+              <line x1="9" y1="9" x2="12" y2="12" />
+            </svg>
+          </button>
+          {sidebarView === "files" && rootPath && (
             <button
               onClick={() => setIsCreating(!isCreating)}
               className="sidebar-btn"
@@ -55,50 +90,60 @@ export default function Sidebar({ files, activeFile, rootPath, onFolderSelect, o
               </svg>
             </button>
           )}
-          <button
-            onClick={handleOpenFolder}
-            className="sidebar-btn"
-            title="Open folder"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1.5 3.5v7a1 1 0 001 1h9a1 1 0 001-1v-5a1 1 0 00-1-1H7L5.5 2.5H2.5a1 1 0 00-1 1z" />
-            </svg>
-          </button>
         </div>
       </div>
 
-      {isCreating && (
-        <div style={{ padding: "8px" }}>
-          <input
-            autoFocus
-            value={newFileName}
-            onChange={(e) => setNewFileName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreateFile();
-              if (e.key === "Escape") setIsCreating(false);
-            }}
-            placeholder="filename.md"
-            className="new-file-input"
-          />
-        </div>
+      {sidebarView === "files" && (
+        <>
+          {isCreating && (
+            <div style={{ padding: "8px" }}>
+              <input
+                autoFocus
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateFile();
+                  if (e.key === "Escape") setIsCreating(false);
+                }}
+                placeholder="filename.md"
+                className="new-file-input"
+              />
+            </div>
+          )}
+
+          <nav className="sidebar-nav">
+            {!rootPath && (
+              <p className="sidebar-empty">
+                Open a folder to start editing your Markdown files
+              </p>
+            )}
+            {files.map((node) => (
+              <FileTreeItem
+                key={node.path}
+                node={node}
+                depth={0}
+                activeFile={activeFile}
+                onFileSelect={onFileSelect}
+              />
+            ))}
+          </nav>
+        </>
       )}
 
-      <nav className="sidebar-nav">
-        {!rootPath && (
+      {sidebarView === "search" && rootPath && (
+        <GlobalSearch
+          rootPath={rootPath}
+          onOpenFileAtMatch={onOpenFileAtMatch}
+        />
+      )}
+
+      {sidebarView === "search" && !rootPath && (
+        <div className="sidebar-nav">
           <p className="sidebar-empty">
-            Open a folder to start editing your Markdown files
+            Open a folder to search across files
           </p>
-        )}
-        {files.map((node) => (
-          <FileTreeItem
-            key={node.path}
-            node={node}
-            depth={0}
-            activeFile={activeFile}
-            onFileSelect={onFileSelect}
-          />
-        ))}
-      </nav>
+        </div>
+      )}
     </aside>
   );
 }
