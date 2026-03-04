@@ -339,7 +339,7 @@ html, body, #root {
   line-height: 1.7;
   color: var(--text-primary);
   caret-color: var(--accent);
-  padding-bottom: 120px;
+  padding-bottom: 80px;
 }
 
 .tiptap > * + * {
