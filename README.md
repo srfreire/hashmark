@@ -22,59 +22,10 @@
   <img src="screenshot.png" width="720" />
 </p>
 
-## Features
+---
 
-<table>
-<tr>
-<td width="50%">
+<kbd>Cmd+S</kbd> Save &nbsp;&middot;&nbsp; <kbd>Cmd+Shift+S</kbd> Save all &nbsp;&middot;&nbsp; <kbd>Cmd+N</kbd> New file &nbsp;&middot;&nbsp; <kbd>Cmd+O</kbd> Open folder &nbsp;&middot;&nbsp; <kbd>Cmd+B</kbd> Toggle sidebar &nbsp;&middot;&nbsp; <kbd>Cmd+F</kbd> Find &nbsp;&middot;&nbsp; <kbd>Cmd+Shift+F</kbd> Find in files &nbsp;&middot;&nbsp; <kbd>/</kbd> Slash commands
 
-**Writing**
-- Rich Markdown editing
-- Slash commands — type `/`
-- Bubble menu on text selection
-- Code blocks with syntax highlighting
+---
 
-</td>
-<td width="50%">
-
-**Workflow**
-- Manual save (`Cmd+S` / `Cmd+Shift+S`)
-- Modified file indicators in sidebar
-- Find & replace in file and across files
-- Dark & light themes
-
-</td>
-</tr>
-</table>
-
-## Shortcuts
-
-<table>
-<tr>
-<th align="center">Files</th>
-<th align="center">Editing</th>
-<th align="center">Navigation</th>
-</tr>
-<tr>
-<td>
-
-`Cmd+S` Save<br>
-`Cmd+Shift+S` Save all<br>
-`Cmd+N` New file<br>
-`Cmd+O` Open folder
-
-</td>
-<td>
-
-`Cmd+F` Find in file<br>
-`Cmd+Shift+F` Find in all files<br>
-`/` Slash commands
-
-</td>
-<td>
-
-`Cmd+B` Toggle sidebar
-
-</td>
-</tr>
-</table>
+Rich Markdown editing &nbsp;&middot;&nbsp; Slash commands &nbsp;&middot;&nbsp; Bubble menu &nbsp;&middot;&nbsp; Syntax highlighting &nbsp;&middot;&nbsp; Find & replace across files &nbsp;&middot;&nbsp; Modified file indicators &nbsp;&middot;&nbsp; Dark & light themes with animated transition &nbsp;&middot;&nbsp; Native macOS app
