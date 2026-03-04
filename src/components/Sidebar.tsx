@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileNode } from "../types";
-import { selectFolder, createFile } from "../services/filesystem";
+import { createFile } from "../services/filesystem";
 import FileTreeItem from "./FileTreeItem";
 import GlobalSearch from "./GlobalSearch";
 
@@ -8,7 +8,6 @@ interface Props {
   files: FileNode[];
   activeFile: string | null;
   rootPath: string | null;
-  onFolderSelect: (path: string) => void;
   onFileSelect: (path: string) => void;
   onFileCreated: () => void;
   showNewFile?: boolean;
@@ -22,7 +21,6 @@ export default function Sidebar({
   files,
   activeFile,
   rootPath,
-  onFolderSelect,
   onFileSelect,
   onFileCreated,
   showNewFile,
@@ -40,11 +38,6 @@ export default function Sidebar({
       onShowNewFileChange?.(false);
     }
   }, [showNewFile, rootPath, onShowNewFileChange]);
-
-  async function handleOpenFolder() {
-    const path = await selectFolder();
-    if (path) onFolderSelect(path);
-  }
 
   async function handleCreateFile() {
     if (!rootPath || !newFileName.trim()) return;

@@ -106,7 +106,6 @@ function App() {
         files={files}
         activeFile={activeFile}
         rootPath={rootPath}
-        onFolderSelect={handleFolderSelect}
         onFileSelect={handleFileSelect}
         onFileCreated={handleFileCreated}
         showNewFile={showNewFile}
