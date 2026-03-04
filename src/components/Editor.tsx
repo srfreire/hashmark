@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, ReactRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -11,8 +11,10 @@ import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import tippy, { Instance } from "tippy.js";
 import BubbleMenu from "./BubbleMenu";
+import FindBar from "./FindBar";
 import SlashMenu from "./SlashMenu";
 import { SlashCommands, slashMenuItems } from "../extensions/slash-command";
+import { SearchAndReplace } from "../extensions/search-and-replace";
 import { readFile, writeFile } from "../services/filesystem";
 
 const lowlight = createLowlight(common);
@@ -20,12 +22,16 @@ const lowlight = createLowlight(common);
 interface Props {
   filePath: string;
   onSaveStatusChange: (status: "saved" | "saving" | "unsaved") => void;
+  searchTerm?: string;
+  onFindBarVisibilityChange?: (visible: boolean) => void;
 }
 
-export default function Editor({ filePath, onSaveStatusChange }: Props) {
+export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFindBarVisibilityChange }: Props) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPathRef = useRef(filePath);
   const initialContentRef = useRef<string | null>(null);
+  const [findBarVisible, setFindBarVisible] = useState(false);
+  const [initialSearchTerm, setInitialSearchTerm] = useState<string | undefined>(undefined);
 
   const editor = useEditor({
     extensions: [
@@ -40,6 +46,7 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
       CodeBlockLowlight.configure({ lowlight }),
       Link.configure({ openOnClick: false }),
       Underline,
+      SearchAndReplace,
       Markdown.configure({
         html: true,
         tightLists: true,
@@ -155,6 +162,19 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
   // Cmd+S manual save
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        const selection = editor?.state.selection;
+        if (selection && !selection.empty) {
+          const selectedText = editor?.state.doc.textBetween(selection.from, selection.to, " ");
+          setInitialSearchTerm(selectedText || undefined);
+        } else {
+          setInitialSearchTerm(undefined);
+        }
+        setFindBarVisible(true);
+        onFindBarVisibilityChange?.(true);
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -180,10 +200,28 @@ export default function Editor({ filePath, onSaveStatusChange }: Props) {
     };
   }, []);
 
+  // Open FindBar when searchTerm prop changes
+  useEffect(() => {
+    if (searchTerm !== undefined && searchTerm !== "") {
+      setInitialSearchTerm(searchTerm);
+      setFindBarVisible(true);
+      onFindBarVisibilityChange?.(true);
+    }
+  }, [searchTerm, onFindBarVisibilityChange]);
+
   if (!editor) return null;
 
   return (
     <div className="editor-container">
+      <FindBar
+        editor={editor}
+        visible={findBarVisible}
+        onClose={() => {
+          setFindBarVisible(false);
+          onFindBarVisibilityChange?.(false);
+        }}
+        initialSearchTerm={initialSearchTerm}
+      />
       <BubbleMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>
