@@ -30,6 +30,18 @@ pub fn run() {
                 .quit()
                 .build()?;
 
+            let find = MenuItemBuilder::with_id("find", "Find")
+                .accelerator("CmdOrCtrl+F")
+                .build(app)?;
+
+            let find_and_replace = MenuItemBuilder::with_id("find_and_replace", "Find and Replace")
+                .accelerator("CmdOrCtrl+H")
+                .build(app)?;
+
+            let find_in_files = MenuItemBuilder::with_id("find_in_files", "Find in Files...")
+                .accelerator("CmdOrCtrl+Shift+F")
+                .build(app)?;
+
             let edit_menu = SubmenuBuilder::new(app, "Edit")
                 .undo()
                 .redo()
@@ -38,6 +50,10 @@ pub fn run() {
                 .copy()
                 .paste()
                 .select_all()
+                .separator()
+                .item(&find)
+                .item(&find_and_replace)
+                .item(&find_in_files)
                 .build()?;
 
             let view_menu = SubmenuBuilder::new(app, "View")
@@ -65,6 +81,15 @@ pub fn run() {
                 }
                 "save" => {
                     let _ = app.emit("menu-save", ());
+                }
+                "find" => {
+                    let _ = app.emit("menu-find", ());
+                }
+                "find_and_replace" => {
+                    let _ = app.emit("menu-find", ());
+                }
+                "find_in_files" => {
+                    let _ = app.emit("menu-find-in-files", ());
                 }
                 _ => {}
             }
