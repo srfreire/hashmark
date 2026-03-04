@@ -24,24 +24,57 @@
 
 ## Features
 
-- **Rich Markdown editing** — headings, lists, tasks, code blocks, links, and more
-- **Slash commands** — type `/` for quick formatting
-- **Bubble menu** — select text to format inline
-- **Find & replace** — in-file (`Cmd+F`) and across files (`Cmd+Shift+F`)
-- **Manual save** — `Cmd+S` to save, `Cmd+Shift+S` to save all
-- **Modified indicators** — orange dots on unsaved files in the sidebar
-- **Dark & light themes** — toggle with one click
-- **Native macOS app** — fast, lightweight, ~5MB binary
+<table>
+<tr>
+<td width="50%">
+
+**Writing**
+- Rich Markdown editing
+- Slash commands — type `/`
+- Bubble menu on text selection
+- Code blocks with syntax highlighting
+
+</td>
+<td width="50%">
+
+**Workflow**
+- Manual save (`Cmd+S` / `Cmd+Shift+S`)
+- Modified file indicators in sidebar
+- Find & replace in file and across files
+- Dark & light themes
+
+</td>
+</tr>
+</table>
 
 ## Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `Cmd+S` | Save |
-| `Cmd+Shift+S` | Save All |
-| `Cmd+N` | New file |
-| `Cmd+O` | Open folder |
-| `Cmd+B` | Toggle sidebar |
-| `Cmd+F` | Find in file |
-| `Cmd+Shift+F` | Find in all files |
-| `/` | Slash commands |
+<table>
+<tr>
+<th align="center">Files</th>
+<th align="center">Editing</th>
+<th align="center">Navigation</th>
+</tr>
+<tr>
+<td>
+
+`Cmd+S` Save<br>
+`Cmd+Shift+S` Save all<br>
+`Cmd+N` New file<br>
+`Cmd+O` Open folder
+
+</td>
+<td>
+
+`Cmd+F` Find in file<br>
+`Cmd+Shift+F` Find in all files<br>
+`/` Slash commands
+
+</td>
+<td>
+
+`Cmd+B` Toggle sidebar
+
+</td>
+</tr>
+</table>

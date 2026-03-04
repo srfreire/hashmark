@@ -966,3 +966,21 @@ html, body, #root {
   color: var(--text-primary);
   background: var(--bg-sidebar-active);
 }
+
+/* ---- Theme Transition ---- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  clip-path: circle(0px at var(--theme-toggle-x) var(--theme-toggle-y));
+  animation: theme-expand 0.5s ease-out forwards;
+}
+
+@keyframes theme-expand {
+  to {
+    clip-path: circle(var(--theme-toggle-r) at var(--theme-toggle-x) var(--theme-toggle-y));
+  }
+}
