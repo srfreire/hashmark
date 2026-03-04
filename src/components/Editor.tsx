@@ -33,6 +33,7 @@ interface Props {
 export default function Editor({ filePath, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange }: Props) {
   const currentPathRef = useRef(filePath);
   const initialContentRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
   const [findBarVisible, setFindBarVisible] = useState(false);
   const [initialSearchTerm, setInitialSearchTerm] = useState<string | undefined>(undefined);
 
@@ -114,6 +115,7 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
       },
     },
     onUpdate: ({ editor }) => {
+      if (isLoadingRef.current) return;
       onSaveStatusChange("unsaved");
       const storage = editor.storage as Record<string, any>;
       const markdown = storage.markdown.getMarkdown();
@@ -131,6 +133,7 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
         const content = initialContent !== undefined ? initialContent : await readFile(filePath);
         initialContentRef.current = content;
         if (editor) {
+          isLoadingRef.current = true;
           // Use the markdown parser directly from storage
           const storage = editor.storage as Record<string, any>;
           if (storage.markdown?.parser) {
@@ -141,6 +144,7 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
             // Fallback: pass content directly and let the Markdown extension handle it
             editor.chain().setContent(content).run();
           }
+          isLoadingRef.current = false;
           // If loaded from buffer, it's still unsaved
           onSaveStatusChange(initialContent !== undefined ? "unsaved" : "saved");
         }
