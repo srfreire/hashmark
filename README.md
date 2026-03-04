@@ -24,8 +24,8 @@
 
 ---
 
-<kbd>Cmd+S</kbd> Save &nbsp;&middot;&nbsp; <kbd>Cmd+Shift+S</kbd> Save all &nbsp;&middot;&nbsp; <kbd>Cmd+N</kbd> New file &nbsp;&middot;&nbsp; <kbd>Cmd+O</kbd> Open folder &nbsp;&middot;&nbsp; <kbd>Cmd+B</kbd> Toggle sidebar &nbsp;&middot;&nbsp; <kbd>Cmd+F</kbd> Find &nbsp;&middot;&nbsp; <kbd>Cmd+Shift+F</kbd> Find in files &nbsp;&middot;&nbsp; <kbd>/</kbd> Slash commands
+`Cmd+S` Save · `Cmd+Shift+S` Save all · `Cmd+N` New file · `Cmd+O` Open folder · `Cmd+B` Toggle sidebar · `Cmd+F` Find · `Cmd+Shift+F` Find in files · `/` Slash commands
 
 ---
 
-Rich Markdown editing &nbsp;&middot;&nbsp; Slash commands &nbsp;&middot;&nbsp; Bubble menu &nbsp;&middot;&nbsp; Syntax highlighting &nbsp;&middot;&nbsp; Find & replace across files &nbsp;&middot;&nbsp; Modified file indicators &nbsp;&middot;&nbsp; Dark & light themes with animated transition &nbsp;&middot;&nbsp; Native macOS app
+Rich Markdown editing · Slash commands · Bubble menu · Syntax highlighting · Find & replace across files · Modified file indicators · Dark & light themes with animated transition · Native macOS app
