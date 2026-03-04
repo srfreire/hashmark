@@ -31,6 +31,8 @@ function App() {
   const activeFileRef = useRef(activeFile);
   activeFileRef.current = activeFile;
   const lastMtimeRef = useRef<number>(0);
+  const modifiedFilesRef = useRef(modifiedFiles);
+  modifiedFilesRef.current = modifiedFiles;
   const editorScrollRef = useRef<HTMLDivElement>(null);
   const editorScrollFnsRef = useRef<Map<string, (pos: number) => void>>(new Map());
   const modifiedFilesSet = useMemo(() => new Set(modifiedFiles.keys()), [modifiedFiles]);
@@ -174,7 +176,7 @@ function App() {
     lastMtimeRef.current = 0;
     getFileMtime(activeFile).then((mt) => { lastMtimeRef.current = mt; }).catch(() => {});
     const interval = setInterval(async () => {
-      if (!activeFile || modifiedFiles.has(activeFile)) return;
+      if (!activeFile || modifiedFilesRef.current.has(activeFile)) return;
       try {
         const mt = await getFileMtime(activeFile);
         if (lastMtimeRef.current > 0 && mt !== lastMtimeRef.current) {
@@ -188,7 +190,7 @@ function App() {
       } catch { /* file may have been deleted */ }
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeFile, modifiedFiles]);
+  }, [activeFile]);
 
   // Global keyboard shortcuts
   useEffect(() => {
