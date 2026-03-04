@@ -1,6 +1,6 @@
 import { readDir, readTextFile, writeTextFile, mkdir, remove, rename, DirEntry } from "@tauri-apps/plugin-fs";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileNode } from "../types";
+import { FileNode, SearchMatch, FileSearchResult } from "../types";
 
 export async function selectFolder(): Promise<string | null> {
   const selected = await open({ directory: true, multiple: false });
@@ -72,4 +72,114 @@ export async function deleteItem(itemPath: string): Promise<void> {
 
 export async function renameItem(oldPath: string, newPath: string): Promise<void> {
   await rename(oldPath, newPath);
+}
+
+export function collectFiles(nodes: FileNode[]): string[] {
+  const paths: string[] = [];
+  for (const node of nodes) {
+    if (node.isDirectory && node.children) {
+      paths.push(...collectFiles(node.children));
+    } else if (!node.isDirectory) {
+      paths.push(node.path);
+    }
+  }
+  return paths;
+}
+
+function buildSearchRegex(
+  searchTerm: string,
+  options: { caseSensitive?: boolean; wholeWord?: boolean; useRegex?: boolean },
+): RegExp | null {
+  if (!searchTerm) return null;
+
+  let pattern: string;
+  if (options.useRegex) {
+    pattern = searchTerm;
+  } else {
+    pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  if (options.wholeWord) {
+    pattern = `\\b${pattern}\\b`;
+  }
+
+  try {
+    return new RegExp(pattern, options.caseSensitive ? "g" : "gi");
+  } catch {
+    return null;
+  }
+}
+
+export async function searchInFiles(
+  rootPath: string,
+  searchTerm: string,
+  options: { caseSensitive?: boolean; wholeWord?: boolean; useRegex?: boolean } = {},
+): Promise<FileSearchResult[]> {
+  if (!searchTerm) return [];
+
+  const tree = await loadFileTree(rootPath);
+  const filePaths = collectFiles(tree);
+  const results: FileSearchResult[] = [];
+
+  for (const filePath of filePaths) {
+    const regex = buildSearchRegex(searchTerm, options);
+    if (!regex) continue;
+
+    try {
+      const content = await readTextFile(filePath);
+      const lines = content.split("\n");
+      const matches: SearchMatch[] = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        let match: RegExpExecArray | null;
+
+        // Reset regex for each line
+        regex.lastIndex = 0;
+        while ((match = regex.exec(line)) !== null) {
+          matches.push({
+            line: i + 1,
+            lineContent: line,
+            matchStart: match.index,
+            matchEnd: match.index + match[0].length,
+          });
+          // Prevent infinite loops for zero-length matches
+          if (match[0].length === 0) regex.lastIndex++;
+        }
+      }
+
+      if (matches.length > 0) {
+        const fileName = filePath.split("/").pop() ?? filePath;
+        results.push({ filePath, fileName, matches });
+      }
+    } catch {
+      // Skip files that can't be read
+    }
+  }
+
+  return results;
+}
+
+export async function replaceInFile(
+  filePath: string,
+  searchTerm: string,
+  replaceTerm: string,
+  options: { caseSensitive?: boolean; wholeWord?: boolean; useRegex?: boolean } = {},
+): Promise<number> {
+  const regex = buildSearchRegex(searchTerm, options);
+  if (!regex) return 0;
+
+  const content = await readTextFile(filePath);
+
+  let count = 0;
+  const newContent = content.replace(regex, () => {
+    count++;
+    return replaceTerm;
+  });
+
+  if (count > 0) {
+    await writeTextFile(filePath, newContent);
+  }
+
+  return count;
 }
