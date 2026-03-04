@@ -18,28 +18,9 @@
   <img src="https://img.shields.io/badge/license-private-444" />
 </p>
 
----
-
-```
-  ┌─────────────────────────────────────────────────────────┐
-  │ ● ● ●   HASHMARK                    ◐  Saved           │
-  ├────────────┬────────────────────────────────────────────┤
-  │ 📁 Files   │                                            │
-  │            │  # Welcome                                 │
-  │  ▾ notes   │                                            │
-  │   • hello  │  This is **Hashmark**, a distraction-free  │
-  │   ● draft  │  Markdown editor that gets out of your     │
-  │   • ideas  │  way and lets you focus on writing.        │
-  │            │                                            │
-  │  ▾ journal │  > Write. Save. Done.                      │
-  │   • today  │                                            │
-  │            │  - [x] Rich text editing                   │
-  │ 🔍 Search  │  - [x] Dark & light themes                 │
-  │            │  - [x] Find & replace                      │
-  │            │  - [x] Slash commands                       │
-  └────────────┴────────────────────────────────────────────┘
-          ● = modified (unsaved)    • = saved
-```
+<p align="center">
+  <img src="screenshot.png" width="720" />
+</p>
 
 ## Features
 
@@ -64,23 +45,3 @@
 | `Cmd+F` | Find in file |
 | `Cmd+Shift+F` | Find in all files |
 | `/` | Slash commands |
-
-## Stack
-
-| Layer | Tech |
-|-------|------|
-| Desktop | Tauri 2 (Rust) |
-| Frontend | React 19 + TypeScript |
-| Editor | Tiptap 3 (ProseMirror) |
-| Bundler | Vite 7 |
-| Fonts | Source Serif 4, IBM Plex Mono |
-
-## Development
-
-```bash
-npm install
-npm run tauri dev      # dev with hot reload
-npm run tauri build    # production build
-```
-
-Build output: `src-tauri/target/release/bundle/macos/Hashmark.app`
