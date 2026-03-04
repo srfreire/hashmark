@@ -135,6 +135,14 @@ html, body, #root {
   color: var(--text-secondary);
 }
 
+.sidebar-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;

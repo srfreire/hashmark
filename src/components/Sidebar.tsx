@@ -8,6 +8,7 @@ interface Props {
   files: FileNode[];
   activeFile: string | null;
   rootPath: string | null;
+  onOpenFolder: () => void;
   onFileSelect: (path: string) => void;
   onFileCreated: () => void;
   showNewFile?: boolean;
@@ -21,6 +22,7 @@ export default function Sidebar({
   files,
   activeFile,
   rootPath,
+  onOpenFolder,
   onFileSelect,
   onFileCreated,
   showNewFile,
@@ -64,32 +66,44 @@ export default function Sidebar({
           <button
             onClick={() => onSidebarViewChange("search")}
             className={`sidebar-btn${sidebarView === "search" ? " sidebar-btn-active" : ""}`}
-            title="Search"
+            title="Search (⌘⇧F)"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <circle cx="6" cy="6" r="4" />
               <line x1="9" y1="9" x2="12" y2="12" />
             </svg>
           </button>
-          {sidebarView === "files" && rootPath && (
-            <button
-              onClick={() => setIsCreating(!isCreating)}
-              className="sidebar-btn"
-              title="New file"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <line x1="7" y1="3" x2="7" y2="11" />
-                <line x1="3" y1="7" x2="11" y2="7" />
-              </svg>
-            </button>
-          )}
         </div>
       </div>
 
       {sidebarView === "files" && (
         <>
+          <div className="sidebar-file-actions">
+            <button
+              onClick={onOpenFolder}
+              className="sidebar-btn"
+              title="Open folder"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1.5 3.5v7a1 1 0 001 1h9a1 1 0 001-1v-5a1 1 0 00-1-1H7L5.5 2.5H2.5a1 1 0 00-1 1z" />
+              </svg>
+            </button>
+            {rootPath && (
+              <button
+                onClick={() => setIsCreating(!isCreating)}
+                className="sidebar-btn"
+                title="New file"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <line x1="7" y1="3" x2="7" y2="11" />
+                  <line x1="3" y1="7" x2="11" y2="7" />
+                </svg>
+              </button>
+            )}
+          </div>
+
           {isCreating && (
-            <div style={{ padding: "8px" }}>
+            <div style={{ padding: "0 8px 8px" }}>
               <input
                 autoFocus
                 value={newFileName}

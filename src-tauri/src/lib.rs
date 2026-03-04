@@ -27,7 +27,6 @@ pub fn run() {
                 .item(&save)
                 .separator()
                 .close_window()
-                .quit()
                 .build()?;
 
             let find = MenuItemBuilder::with_id("find", "Find")
@@ -61,7 +60,20 @@ pub fn run() {
                 .minimize()
                 .build()?;
 
+            let app_menu = SubmenuBuilder::new(app, "Hashmark")
+                .about(None)
+                .separator()
+                .services()
+                .separator()
+                .hide()
+                .hide_others()
+                .show_all()
+                .separator()
+                .quit()
+                .build()?;
+
             let menu = MenuBuilder::new(app)
+                .item(&app_menu)
                 .item(&file_menu)
                 .item(&edit_menu)
                 .item(&view_menu)

@@ -109,6 +109,7 @@ function App() {
         files={files}
         activeFile={activeFile}
         rootPath={rootPath}
+        onOpenFolder={handleOpenFolder}
         onFileSelect={handleFileSelect}
         onFileCreated={handleFileCreated}
         showNewFile={showNewFile}
