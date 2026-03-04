@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
@@ -15,6 +15,7 @@ function App() {
   const [showNewFile, setShowNewFile] = useState(false);
   const [sidebarView, setSidebarView] = useState<"files" | "search">("files");
   const [pendingSearchTerm, setPendingSearchTerm] = useState<string | undefined>(undefined);
+  const editorScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -40,6 +41,7 @@ function App() {
     setActiveFile(path);
     setSaveStatus("saved");
     setPendingSearchTerm(undefined);
+    editorScrollRef.current?.scrollTo(0, 0);
   }
 
   function handleFileCreated() {
@@ -50,6 +52,7 @@ function App() {
     setActiveFile(filePath);
     setPendingSearchTerm(searchTerm);
     setSaveStatus("saved");
+    editorScrollRef.current?.scrollTo(0, 0);
   }, []);
 
   // Cmd+Shift+F global keyboard listener
@@ -134,7 +137,7 @@ function App() {
             </div>
           </div>
         )}
-        <div className="editor-scroll">
+        <div className="editor-scroll" ref={editorScrollRef}>
           {activeFile ? (
             <Editor
               key={activeFile}

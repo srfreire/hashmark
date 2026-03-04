@@ -301,7 +301,7 @@ html, body, #root {
 .editor-container {
   width: 100%;
   max-width: 720px;
-  padding: 40px 24px 120px;
+  padding: 40px 24px 50vh;
 }
 
 .empty-state {
