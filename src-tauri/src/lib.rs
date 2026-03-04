@@ -20,11 +20,16 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+S")
                 .build(app)?;
 
+            let save_all = MenuItemBuilder::with_id("save_all", "Save All")
+                .accelerator("CmdOrCtrl+Shift+S")
+                .build(app)?;
+
             let file_menu = SubmenuBuilder::new(app, "File")
                 .item(&new_file)
                 .item(&open_folder)
                 .separator()
                 .item(&save)
+                .item(&save_all)
                 .separator()
                 .close_window()
                 .build()?;
@@ -55,7 +60,13 @@ pub fn run() {
                 .item(&find_in_files)
                 .build()?;
 
+            let toggle_sidebar = MenuItemBuilder::with_id("toggle_sidebar", "Toggle Sidebar")
+                .accelerator("CmdOrCtrl+B")
+                .build(app)?;
+
             let view_menu = SubmenuBuilder::new(app, "View")
+                .item(&toggle_sidebar)
+                .separator()
                 .fullscreen()
                 .minimize()
                 .build()?;
@@ -94,6 +105,9 @@ pub fn run() {
                 "save" => {
                     let _ = app.emit("menu-save", ());
                 }
+                "save_all" => {
+                    let _ = app.emit("menu-save-all", ());
+                }
                 "find" => {
                     let _ = app.emit("menu-find", ());
                 }
@@ -102,6 +116,9 @@ pub fn run() {
                 }
                 "find_in_files" => {
                     let _ = app.emit("menu-find-in-files", ());
+                }
+                "toggle_sidebar" => {
+                    let _ = app.emit("menu-toggle-sidebar", ());
                 }
                 _ => {}
             }

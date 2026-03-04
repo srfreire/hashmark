@@ -41,13 +41,9 @@ function escapeRegExp(str: string): string {
 function buildSearchRegex(state: SearchState): RegExp | null {
   if (!state.searchTerm) return null;
 
-  let pattern: string;
-
-  if (state.useRegex) {
-    pattern = state.searchTerm;
-  } else {
-    pattern = escapeRegExp(state.searchTerm);
-  }
+  let pattern = state.useRegex
+    ? state.searchTerm
+    : escapeRegExp(state.searchTerm);
 
   if (state.wholeWord) {
     pattern = `\\b${pattern}\\b`;
@@ -308,10 +304,12 @@ export const SearchAndReplace = Extension.create<
       clearSearch:
         () =>
         ({ editor }) => {
-          this.storage.searchState.searchTerm = "";
-          this.storage.searchState.replaceTerm = "";
-          this.storage.searchState.activeIndex = 0;
-          this.storage.searchState.matchCount = 0;
+          Object.assign(this.storage.searchState, {
+            searchTerm: "",
+            replaceTerm: "",
+            activeIndex: 0,
+            matchCount: 0,
+          });
           this.storage.onStateChange?.(this.storage.searchState);
           editor.view.dispatch(editor.state.tr);
           return true;

@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import ThemeToggle from "./components/ThemeToggle";
 import { FileNode } from "./types";
-import { loadFileTree, selectFolder } from "./services/filesystem";
+import { loadFileTree, selectFolder, writeFile } from "./services/filesystem";
 
 function App() {
   const [rootPath, setRootPath] = useState<string | null>(null);
@@ -14,8 +14,11 @@ function App() {
   const [dark, setDark] = useState(true);
   const [showNewFile, setShowNewFile] = useState(false);
   const [sidebarView, setSidebarView] = useState<"files" | "search">("files");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingSearchTerm, setPendingSearchTerm] = useState<string | undefined>(undefined);
+  const [modifiedFiles, setModifiedFiles] = useState<Map<string, string>>(new Map());
   const editorScrollRef = useRef<HTMLDivElement>(null);
+  const modifiedFilesSet = useMemo(() => new Set(modifiedFiles.keys()), [modifiedFiles]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -39,7 +42,7 @@ function App() {
 
   function handleFileSelect(path: string) {
     setActiveFile(path);
-    setSaveStatus("saved");
+    setSaveStatus(modifiedFiles.has(path) ? "unsaved" : "saved");
     setPendingSearchTerm(undefined);
     editorScrollRef.current?.scrollTo(0, 0);
   }
@@ -55,18 +58,48 @@ function App() {
     editorScrollRef.current?.scrollTo(0, 0);
   }, []);
 
-  // Cmd+Shift+F global keyboard listener
+  const handleContentChange = useCallback((path: string, markdown: string) => {
+    setModifiedFiles((prev) => new Map(prev).set(path, markdown));
+  }, []);
+
+  const handleFileSaved = useCallback((path: string) => {
+    setModifiedFiles((prev) => {
+      const next = new Map(prev);
+      next.delete(path);
+      return next;
+    });
+  }, []);
+
+  const saveAllFiles = useCallback(async () => {
+    if (modifiedFiles.size === 0) return;
+    setSaveStatus("saving");
+    const entries = Array.from(modifiedFiles.entries());
+    await Promise.all(entries.map(([path, content]) => writeFile(path, content)));
+    setModifiedFiles(new Map());
+    setSaveStatus("saved");
+  }, [modifiedFiles]);
+
+  // Global keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "f") {
         e.preventDefault();
+        setSidebarCollapsed(false);
         setSidebarView("search");
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "s") {
+        e.preventDefault();
+        saveAllFiles();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        setSidebarCollapsed((prev) => !prev);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [saveAllFiles]);
 
   // Listen for native menu events
   useEffect(() => {
@@ -85,30 +118,41 @@ function App() {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "s", metaKey: true }));
     }).then((fn) => unlisten.push(fn));
 
+    listen("menu-save-all", () => {
+      saveAllFiles();
+    }).then((fn) => unlisten.push(fn));
+
     listen("menu-find", () => {
       // Cmd+F: open in-editor find bar (dispatched as keyboard event)
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true }));
     }).then((fn) => unlisten.push(fn));
 
     listen("menu-find-in-files", () => {
+      setSidebarCollapsed(false);
       setSidebarView("search");
+    }).then((fn) => unlisten.push(fn));
+
+    listen("menu-toggle-sidebar", () => {
+      setSidebarCollapsed((prev) => !prev);
     }).then((fn) => unlisten.push(fn));
 
     return () => {
       unlisten.forEach((fn) => fn());
     };
-  }, [handleOpenFolder]);
+  }, [handleOpenFolder, saveAllFiles]);
 
   const fileName = activeFile?.split("/").pop()?.replace(/\.md$/, "") ?? "";
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      <div className="drag-region" />
+      <div className="drag-region" data-tauri-drag-region />
 
       <Sidebar
         files={files}
         activeFile={activeFile}
         rootPath={rootPath}
+        collapsed={sidebarCollapsed}
+        onCollapse={() => setSidebarCollapsed((prev) => !prev)}
         onOpenFolder={handleOpenFolder}
         onFileSelect={handleFileSelect}
         onFileCreated={handleFileCreated}
@@ -117,16 +161,27 @@ function App() {
         sidebarView={sidebarView}
         onSidebarViewChange={setSidebarView}
         onOpenFileAtMatch={handleOpenFileAtMatch}
+        modifiedFiles={modifiedFilesSet}
       />
+      {sidebarCollapsed && (
+        <button
+          className="sidebar-expand-btn"
+          onClick={() => setSidebarCollapsed(false)}
+          title="Expand Sidebar (⌘B)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </button>
+      )}
       <div className="editor-area">
         {activeFile ? (
-          <div className="editor-topbar">
+          <div className="editor-topbar" data-tauri-drag-region>
             <span className="editor-filename">{fileName}</span>
             <div className="editor-topbar-right drag-region-interactive">
               <span className={`save-status ${saveStatus}`}>
-                {saveStatus === "saved" ? "Saved" :
-                 saveStatus === "saving" ? "Saving..." :
-                 "Unsaved"}
+                {{ saved: "Saved", saving: "Saving...", unsaved: "Unsaved" }[saveStatus]}
               </span>
               <ThemeToggle dark={dark} onToggle={() => setDark(!dark)} />
             </div>
@@ -138,12 +193,16 @@ function App() {
             </div>
           </div>
         )}
+        <div id="find-bar-container" />
         <div className="editor-scroll" ref={editorScrollRef}>
           {activeFile ? (
             <Editor
               key={activeFile}
               filePath={activeFile}
               onSaveStatusChange={setSaveStatus}
+              onContentChange={handleContentChange}
+              onFileSaved={handleFileSaved}
+              initialContent={modifiedFiles.get(activeFile)}
               searchTerm={pendingSearchTerm}
             />
           ) : (

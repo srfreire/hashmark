@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useEditor, EditorContent, ReactRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -22,12 +23,14 @@ const lowlight = createLowlight(common);
 interface Props {
   filePath: string;
   onSaveStatusChange: (status: "saved" | "saving" | "unsaved") => void;
+  onContentChange?: (path: string, markdown: string) => void;
+  onFileSaved?: (path: string) => void;
+  initialContent?: string;
   searchTerm?: string;
   onFindBarVisibilityChange?: (visible: boolean) => void;
 }
 
-export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFindBarVisibilityChange }: Props) {
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export default function Editor({ filePath, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange }: Props) {
   const currentPathRef = useRef(filePath);
   const initialContentRef = useRef<string | null>(null);
   const [findBarVisible, setFindBarVisible] = useState(false);
@@ -112,21 +115,9 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
     },
     onUpdate: ({ editor }) => {
       onSaveStatusChange("unsaved");
-
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          const storage = editor.storage as Record<string, any>;
-          const markdown = storage.markdown.getMarkdown();
-          onSaveStatusChange("saving");
-          await writeFile(currentPathRef.current, markdown);
-          onSaveStatusChange("saved");
-        } catch (e) {
-          console.error("Auto-save failed:", e);
-          onSaveStatusChange("unsaved");
-        }
-      }, 1000);
+      const storage = editor.storage as Record<string, any>;
+      const markdown = storage.markdown.getMarkdown();
+      onContentChange?.(currentPathRef.current, markdown);
     },
   });
 
@@ -136,7 +127,8 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
 
     async function load() {
       try {
-        const content = await readFile(filePath);
+        // Use initialContent (from buffer) if provided, otherwise read from disk
+        const content = initialContent !== undefined ? initialContent : await readFile(filePath);
         initialContentRef.current = content;
         if (editor) {
           // Use the markdown parser directly from storage
@@ -149,7 +141,8 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
             // Fallback: pass content directly and let the Markdown extension handle it
             editor.chain().setContent(content).run();
           }
-          onSaveStatusChange("saved");
+          // If loaded from buffer, it's still unsaved
+          onSaveStatusChange(initialContent !== undefined ? "unsaved" : "saved");
         }
       } catch (e) {
         console.error("Failed to load file:", e);
@@ -159,31 +152,29 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
     if (editor) load();
   }, [filePath, editor]);
 
-  // Cmd+S manual save
+  // Keyboard shortcuts: Cmd+F (find), Cmd+S (save)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
-        const selection = editor?.state.selection;
-        if (selection && !selection.empty) {
-          const selectedText = editor?.state.doc.textBetween(selection.from, selection.to, " ");
-          setInitialSearchTerm(selectedText || undefined);
-        } else {
-          setInitialSearchTerm(undefined);
-        }
+        const { selection } = editor?.state ?? {};
+        const selectedText = selection && !selection.empty
+          ? editor?.state.doc.textBetween(selection.from, selection.to, " ")
+          : undefined;
+        setInitialSearchTerm(selectedText || undefined);
         setFindBarVisible(true);
         onFindBarVisibilityChange?.(true);
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "s") {
         e.preventDefault();
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         if (editor) {
           const storage = editor.storage as Record<string, any>;
           const markdown = storage.markdown.getMarkdown();
           onSaveStatusChange("saving");
           writeFile(currentPathRef.current, markdown).then(() => {
             onSaveStatusChange("saved");
+            onFileSaved?.(currentPathRef.current);
           });
         }
       }
@@ -193,16 +184,9 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editor]);
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, []);
-
   // Open FindBar when searchTerm prop changes
   useEffect(() => {
-    if (searchTerm !== undefined && searchTerm !== "") {
+    if (searchTerm) {
       setInitialSearchTerm(searchTerm);
       setFindBarVisible(true);
       onFindBarVisibilityChange?.(true);
@@ -211,17 +195,22 @@ export default function Editor({ filePath, onSaveStatusChange, searchTerm, onFin
 
   if (!editor) return null;
 
+  const findBarContainer = document.getElementById("find-bar-container");
+
   return (
     <div className="editor-container">
-      <FindBar
-        editor={editor}
-        visible={findBarVisible}
-        onClose={() => {
-          setFindBarVisible(false);
-          onFindBarVisibilityChange?.(false);
-        }}
-        initialSearchTerm={initialSearchTerm}
-      />
+      {findBarContainer && createPortal(
+        <FindBar
+          editor={editor}
+          visible={findBarVisible}
+          onClose={() => {
+            setFindBarVisible(false);
+            onFindBarVisibilityChange?.(false);
+          }}
+          initialSearchTerm={initialSearchTerm}
+        />,
+        findBarContainer,
+      )}
       <BubbleMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>

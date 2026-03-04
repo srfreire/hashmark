@@ -6,11 +6,13 @@ interface Props {
   depth: number;
   activeFile: string | null;
   onFileSelect: (path: string) => void;
+  modifiedFiles?: Set<string>;
 }
 
-export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: Props) {
+export default function FileTreeItem({ node, depth, activeFile, onFileSelect, modifiedFiles }: Props) {
   const [expanded, setExpanded] = useState(true);
   const isActive = node.path === activeFile;
+  const isModified = modifiedFiles?.has(node.path) ?? false;
   const indent = 8 + depth * 16;
 
   if (node.isDirectory) {
@@ -35,6 +37,7 @@ export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: 
             depth={depth + 1}
             activeFile={activeFile}
             onFileSelect={onFileSelect}
+            modifiedFiles={modifiedFiles}
           />
         ))}
       </div>
@@ -44,7 +47,7 @@ export default function FileTreeItem({ node, depth, activeFile, onFileSelect }: 
   return (
     <button
       onClick={() => onFileSelect(node.path)}
-      className={`tree-file ${isActive ? "active" : ""}`}
+      className={`tree-file ${isActive ? "active" : ""}${isModified ? " modified" : ""}`}
       style={{ paddingLeft: indent + 20 }}
     >
       <span className="tree-file-dot" />

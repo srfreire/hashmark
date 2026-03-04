@@ -92,12 +92,9 @@ function buildSearchRegex(
 ): RegExp | null {
   if (!searchTerm) return null;
 
-  let pattern: string;
-  if (options.useRegex) {
-    pattern = searchTerm;
-  } else {
-    pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
+  let pattern = options.useRegex
+    ? searchTerm
+    : searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   if (options.wholeWord) {
     pattern = `\\b${pattern}\\b`;
@@ -117,14 +114,14 @@ export async function searchInFiles(
 ): Promise<FileSearchResult[]> {
   if (!searchTerm) return [];
 
+  const regex = buildSearchRegex(searchTerm, options);
+  if (!regex) return [];
+
   const tree = await loadFileTree(rootPath);
   const filePaths = collectFiles(tree);
   const results: FileSearchResult[] = [];
 
   for (const filePath of filePaths) {
-    const regex = buildSearchRegex(searchTerm, options);
-    if (!regex) continue;
-
     try {
       const content = await readTextFile(filePath);
       const lines = content.split("\n");
@@ -134,7 +131,6 @@ export async function searchInFiles(
         const line = lines[i];
         let match: RegExpExecArray | null;
 
-        // Reset regex for each line
         regex.lastIndex = 0;
         while ((match = regex.exec(line)) !== null) {
           matches.push({
@@ -143,7 +139,6 @@ export async function searchInFiles(
             matchStart: match.index,
             matchEnd: match.index + match[0].length,
           });
-          // Prevent infinite loops for zero-length matches
           if (match[0].length === 0) regex.lastIndex++;
         }
       }

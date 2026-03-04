@@ -36,7 +36,7 @@ export default function FindBar({ editor, visible, onClose, initialSearchTerm }:
   // On open: focus search input and apply initialSearchTerm
   useEffect(() => {
     if (visible) {
-      if (initialSearchTerm !== undefined && initialSearchTerm !== "") {
+      if (initialSearchTerm) {
         setSearchTerm(initialSearchTerm);
         editor.commands.setSearchTerm(initialSearchTerm);
       }
@@ -72,9 +72,8 @@ export default function FindBar({ editor, visible, onClose, initialSearchTerm }:
   const toggleOption = useCallback(
     (option: "caseSensitive" | "wholeWord" | "useRegex", current: boolean) => {
       const newValue = !current;
-      if (option === "caseSensitive") setCaseSensitive(newValue);
-      if (option === "wholeWord") setWholeWord(newValue);
-      if (option === "useRegex") setUseRegex(newValue);
+      const setters = { caseSensitive: setCaseSensitive, wholeWord: setWholeWord, useRegex: setUseRegex };
+      setters[option](newValue);
       editor.commands.setSearchOption(option, newValue);
     },
     [editor],
@@ -108,12 +107,12 @@ export default function FindBar({ editor, visible, onClose, initialSearchTerm }:
 
   if (!visible) return null;
 
-  const matchDisplay =
-    matchInfo.matchCount > 0
-      ? `${matchInfo.activeIndex + 1}/${matchInfo.matchCount}`
-      : searchTerm
-        ? "No results"
-        : "";
+  function getMatchDisplay(): string {
+    if (matchInfo.matchCount > 0) return `${matchInfo.activeIndex + 1}/${matchInfo.matchCount}`;
+    if (searchTerm) return "No results";
+    return "";
+  }
+  const matchDisplay = getMatchDisplay();
 
   return (
     <div className="find-bar">
@@ -123,7 +122,7 @@ export default function FindBar({ editor, visible, onClose, initialSearchTerm }:
           onClick={() => setShowReplace(!showReplace)}
           title="Toggle Replace"
         >
-          ▸
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2L7 5L3 8" /></svg>
         </button>
         <input
           ref={searchInputRef}
@@ -161,21 +160,21 @@ export default function FindBar({ editor, visible, onClose, initialSearchTerm }:
           onClick={() => editor.commands.previousMatch()}
           title="Previous Match"
         >
-          ▲
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.5L5 3.5L7.5 6.5" /></svg>
         </button>
         <button
           className="find-bar-nav"
           onClick={() => editor.commands.nextMatch()}
           title="Next Match"
         >
-          ▼
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 3.5L5 6.5L7.5 3.5" /></svg>
         </button>
         <button
           className="find-bar-close"
           onClick={handleClose}
           title="Close"
         >
-          ✕
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" /></svg>
         </button>
       </div>
       {showReplace && (

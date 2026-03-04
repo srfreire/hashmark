@@ -5,9 +5,10 @@ import { searchInFiles, replaceInFile } from "../services/filesystem";
 interface Props {
   rootPath: string;
   onOpenFileAtMatch: (filePath: string, searchTerm: string) => void;
+  onClose: () => void;
 }
 
-export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
+export default function GlobalSearch({ rootPath, onOpenFileAtMatch, onClose }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
   const [showReplace, setShowReplace] = useState(false);
@@ -66,7 +67,8 @@ export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
     };
   }, [searchTerm, doSearch]);
 
-  // Re-search when options change (if there's a term)
+  // Re-search immediately when options toggle (skip debounce delay).
+  // searchTerm and doSearch are intentionally omitted to only fire on option changes.
   useEffect(() => {
     if (searchTerm.trim()) {
       doSearch(searchTerm);
@@ -87,22 +89,22 @@ export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
 
   const handleReplaceInFile = useCallback(
     async (filePath: string) => {
-      if (!replaceTerm && replaceTerm !== "") return;
       await replaceInFile(filePath, searchTerm, replaceTerm, {
         caseSensitive,
         wholeWord,
         useRegex,
       });
-      // Re-search to update results
       doSearch(searchTerm);
     },
     [searchTerm, replaceTerm, caseSensitive, wholeWord, useRegex, doSearch],
   );
 
+  const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
+
   const handleReplaceAll = useCallback(async () => {
-    const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
+    const matchCount = results.reduce((sum, r) => sum + r.matches.length, 0);
     const confirmed = window.confirm(
-      `Replace ${totalMatches} matches across ${results.length} files?`,
+      `Replace ${matchCount} matches across ${results.length} files?`,
     );
     if (!confirmed) return;
 
@@ -113,11 +115,8 @@ export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
         useRegex,
       });
     }
-    // Re-search to update results
     doSearch(searchTerm);
   }, [results, searchTerm, replaceTerm, caseSensitive, wholeWord, useRegex, doSearch]);
-
-  const totalMatches = results.reduce((sum, r) => sum + r.matches.length, 0);
 
   function highlightMatch(lineContent: string, matchStart: number, matchEnd: number) {
     const before = lineContent.substring(0, matchStart);
@@ -148,7 +147,7 @@ export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
             onClick={() => setShowReplace(!showReplace)}
             title="Toggle Replace"
           >
-            &#9656;
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2L7 5L3 8" /></svg>
           </button>
           <input
             ref={searchInputRef}
@@ -158,6 +157,13 @@ export default function GlobalSearch({ rootPath, onOpenFileAtMatch }: Props) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <button
+            className="find-bar-close"
+            onClick={onClose}
+            title="Close Search"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" /></svg>
+          </button>
         </div>
         {showReplace && (
           <div className="global-search-row">

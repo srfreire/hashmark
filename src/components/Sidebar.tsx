@@ -8,6 +8,8 @@ interface Props {
   files: FileNode[];
   activeFile: string | null;
   rootPath: string | null;
+  collapsed: boolean;
+  onCollapse: () => void;
   onOpenFolder: () => void;
   onFileSelect: (path: string) => void;
   onFileCreated: () => void;
@@ -16,12 +18,15 @@ interface Props {
   sidebarView: "files" | "search";
   onSidebarViewChange: (view: "files" | "search") => void;
   onOpenFileAtMatch: (filePath: string, searchTerm: string) => void;
+  modifiedFiles?: Set<string>;
 }
 
 export default function Sidebar({
   files,
   activeFile,
   rootPath,
+  collapsed,
+  onCollapse,
   onOpenFolder,
   onFileSelect,
   onFileCreated,
@@ -30,6 +35,7 @@ export default function Sidebar({
   sidebarView,
   onSidebarViewChange,
   onOpenFileAtMatch,
+  modifiedFiles,
 }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState("");
@@ -50,8 +56,8 @@ export default function Sidebar({
   }
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
+    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
+      <div className="sidebar-header" data-tauri-drag-region>
         <h1>Hashmark</h1>
         <div className="sidebar-actions">
           <button
@@ -73,6 +79,16 @@ export default function Sidebar({
               <line x1="9" y1="9" x2="12" y2="12" />
             </svg>
           </button>
+          <button
+            onClick={onCollapse}
+            className="sidebar-btn"
+            title="Collapse Sidebar (⌘B)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -84,9 +100,8 @@ export default function Sidebar({
               className="sidebar-btn"
               title="Open folder"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 10V4a1 1 0 011-1h3l1.5 1.5H11a1 1 0 011 1V10a1 1 0 01-1 1H3a1 1 0 01-1-1z" />
-                <path d="M5 8.5h4M7 6.5v4" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
               </svg>
             </button>
             {rootPath && (
@@ -104,18 +119,25 @@ export default function Sidebar({
           </div>
 
           {isCreating && (
-            <div style={{ padding: "0 8px 8px" }}>
+            <div style={{ padding: "0 8px 8px", display: "flex", gap: 4, alignItems: "center" }}>
               <input
                 autoFocus
                 value={newFileName}
                 onChange={(e) => setNewFileName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleCreateFile();
-                  if (e.key === "Escape") setIsCreating(false);
+                  if (e.key === "Escape") { setIsCreating(false); setNewFileName(""); }
                 }}
                 placeholder="filename.md"
                 className="new-file-input"
               />
+              <button
+                className="sidebar-btn"
+                onClick={() => { setIsCreating(false); setNewFileName(""); }}
+                title="Cancel"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" /></svg>
+              </button>
             </div>
           )}
 
@@ -132,25 +154,27 @@ export default function Sidebar({
                 depth={0}
                 activeFile={activeFile}
                 onFileSelect={onFileSelect}
+                modifiedFiles={modifiedFiles}
               />
             ))}
           </nav>
         </>
       )}
 
-      {sidebarView === "search" && rootPath && (
-        <GlobalSearch
-          rootPath={rootPath}
-          onOpenFileAtMatch={onOpenFileAtMatch}
-        />
-      )}
-
-      {sidebarView === "search" && !rootPath && (
-        <div className="sidebar-nav">
-          <p className="sidebar-empty">
-            Open a folder to search across files
-          </p>
-        </div>
+      {sidebarView === "search" && (
+        rootPath ? (
+          <GlobalSearch
+            rootPath={rootPath}
+            onOpenFileAtMatch={onOpenFileAtMatch}
+            onClose={() => onSidebarViewChange("files")}
+          />
+        ) : (
+          <div className="sidebar-nav">
+            <p className="sidebar-empty">
+              Open a folder to search across files
+            </p>
+          </div>
+        )
       )}
     </aside>
   );
