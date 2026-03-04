@@ -304,12 +304,13 @@ html, body, #root {
   overflow-y: auto;
   display: flex;
   justify-content: center;
+  padding-bottom: 50vh;
 }
 
 .editor-container {
   width: 100%;
   max-width: 720px;
-  padding: 40px 24px 50vh;
+  padding: 40px 24px 0;
 }
 
 .empty-state {
