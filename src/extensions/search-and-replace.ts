@@ -191,8 +191,8 @@ export const SearchAndReplace = Extension.create<
 
       setReplaceTerm:
         (term: string) =>
-        ({ editor }) => {
-          updateSearch(editor, this.storage, { replaceTerm: term });
+        () => {
+          this.storage.searchState.replaceTerm = term;
           return true;
         },
 
@@ -286,18 +286,16 @@ export const SearchAndReplace = Extension.create<
           const matches = findMatches(editor.state.doc, regex);
           if (matches.length === 0) return false;
 
-          // Replace in reverse order to preserve positions
+          // Batch all replacements into a single transaction for proper undo
+          const chain = editor.chain().focus();
           const reversed = [...matches].reverse();
           for (const match of reversed) {
-            editor
-              .chain()
-              .focus()
-              .insertContentAt(
-                { from: match.from, to: match.to },
-                searchState.replaceTerm,
-              )
-              .run();
+            chain.insertContentAt(
+              { from: match.from, to: match.to },
+              searchState.replaceTerm,
+            );
           }
+          chain.run();
 
           searchState.matchCount = 0;
           searchState.activeIndex = 0;
@@ -310,15 +308,10 @@ export const SearchAndReplace = Extension.create<
       clearSearch:
         () =>
         ({ editor }) => {
-          this.storage.searchState = {
-            searchTerm: "",
-            replaceTerm: "",
-            caseSensitive: false,
-            wholeWord: false,
-            useRegex: false,
-            activeIndex: 0,
-            matchCount: 0,
-          };
+          this.storage.searchState.searchTerm = "";
+          this.storage.searchState.replaceTerm = "";
+          this.storage.searchState.activeIndex = 0;
+          this.storage.searchState.matchCount = 0;
           this.storage.onStateChange?.(this.storage.searchState);
           editor.view.dispatch(editor.state.tr);
           return true;
