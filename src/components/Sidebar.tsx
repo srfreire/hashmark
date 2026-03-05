@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FileNode } from "../types";
-import { createFile } from "../services/filesystem";
+import { createFile, createFolder } from "../services/filesystem";
 import FileTreeItem from "./FileTreeItem";
 import GlobalSearch from "./GlobalSearch";
 import OutlineView from "./OutlineView";
+import ContextMenu, { ContextMenuEntry } from "./ContextMenu";
 
 interface Props {
   files: FileNode[];
@@ -19,6 +20,9 @@ interface Props {
   sidebarView: "files" | "search" | "outline";
   onSidebarViewChange: (view: "files" | "search" | "outline") => void;
   onOpenFileAtMatch: (filePath: string, searchTerm: string) => void;
+  onRenameItem?: (oldPath: string, newPath: string) => void;
+  onDeleteItem?: (path: string, isDirectory: boolean) => void;
+  onRevealItem?: (path: string) => void;
   modifiedFiles?: Set<string>;
   gitStatuses?: Map<string, string>;
   headings?: Array<{ level: number; text: string; pos: number }>;
@@ -39,6 +43,9 @@ export default function Sidebar({
   sidebarView,
   onSidebarViewChange,
   onOpenFileAtMatch,
+  onRenameItem,
+  onDeleteItem,
+  onRevealItem,
   modifiedFiles,
   gitStatuses,
   headings,
@@ -46,6 +53,10 @@ export default function Sidebar({
 }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFileName, setNewFileName] = useState("");
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileNode } | null>(null);
+  const [renamingPath, setRenamingPath] = useState<string | null>(null);
+  const [newItemInFolder, setNewItemInFolder] = useState<{ parentPath: string; type: "file" | "folder" } | null>(null);
+  const [newItemName, setNewItemName] = useState("");
 
   useEffect(() => {
     if (showNewFile && rootPath) {
@@ -60,6 +71,84 @@ export default function Sidebar({
     setNewFileName("");
     setIsCreating(false);
     onFileCreated();
+  }
+
+  async function handleNewItemInFolder() {
+    if (!newItemInFolder || !newItemName.trim()) return;
+    if (newItemInFolder.type === "file") {
+      const path = await createFile(newItemInFolder.parentPath, newItemName.trim());
+      onFileCreated();
+      onFileSelect(path);
+    } else {
+      await createFolder(newItemInFolder.parentPath, newItemName.trim());
+      onFileCreated();
+    }
+    setNewItemInFolder(null);
+    setNewItemName("");
+  }
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, node: FileNode) => {
+    setContextMenu({ x: e.clientX, y: e.clientY, node });
+  }, []);
+
+  const handleRenameSubmit = useCallback((oldPath: string, newName: string) => {
+    const parentDir = oldPath.substring(0, oldPath.lastIndexOf("/"));
+    const newPath = `${parentDir}/${newName}`;
+    onRenameItem?.(oldPath, newPath);
+    setRenamingPath(null);
+  }, [onRenameItem]);
+
+  const handleRenameCancel = useCallback(() => {
+    setRenamingPath(null);
+  }, []);
+
+  function buildContextMenuItems(node: FileNode): ContextMenuEntry[] {
+    if (node.isDirectory) {
+      return [
+        {
+          label: "New File",
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" /></svg>,
+          action: () => { setNewItemInFolder({ parentPath: node.path, type: "file" }); setNewItemName(""); },
+        },
+        {
+          label: "New Folder",
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" /><line x1="12" y1="11" x2="12" y2="17" /><line x1="9" y1="14" x2="15" y2="14" /></svg>,
+          action: () => { setNewItemInFolder({ parentPath: node.path, type: "folder" }); setNewItemName(""); },
+        },
+        "separator",
+        {
+          label: "Rename",
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z" /></svg>,
+          action: () => setRenamingPath(node.path),
+        },
+        {
+          label: "Delete",
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>,
+          action: () => onDeleteItem?.(node.path, true),
+          danger: true,
+        },
+      ];
+    }
+
+    return [
+      {
+        label: "Rename",
+        icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z" /></svg>,
+        action: () => setRenamingPath(node.path),
+      },
+      {
+        label: "Delete",
+        icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>,
+        action: () => onDeleteItem?.(node.path, false),
+        danger: true,
+      },
+      "separator",
+      {
+        label: "Reveal in Finder",
+        icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>,
+        action: () => onRevealItem?.(node.path),
+      },
+    ];
   }
 
   return (
@@ -160,6 +249,29 @@ export default function Sidebar({
             </div>
           )}
 
+          {newItemInFolder && (
+            <div style={{ padding: "0 8px 8px", display: "flex", gap: 4, alignItems: "center" }}>
+              <input
+                autoFocus
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleNewItemInFolder();
+                  if (e.key === "Escape") { setNewItemInFolder(null); setNewItemName(""); }
+                }}
+                placeholder={newItemInFolder.type === "file" ? "filename.md" : "folder name"}
+                className="new-file-input"
+              />
+              <button
+                className="sidebar-btn"
+                onClick={() => { setNewItemInFolder(null); setNewItemName(""); }}
+                title="Cancel"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5" /></svg>
+              </button>
+            </div>
+          )}
+
           <nav className="sidebar-nav">
             {!rootPath && (
               <p className="sidebar-empty">
@@ -173,6 +285,10 @@ export default function Sidebar({
                 depth={0}
                 activeFile={activeFile}
                 onFileSelect={onFileSelect}
+                onContextMenu={handleContextMenu}
+                renamingPath={renamingPath}
+                onRenameSubmit={handleRenameSubmit}
+                onRenameCancel={handleRenameCancel}
                 modifiedFiles={modifiedFiles}
                 gitStatuses={gitStatuses}
               />
@@ -202,6 +318,15 @@ export default function Sidebar({
             </p>
           </div>
         )
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={buildContextMenuItems(contextMenu.node)}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </aside>
   );

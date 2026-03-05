@@ -26,6 +26,7 @@ const lowlight = createLowlight(common);
 
 interface Props {
   filePath: string;
+  revision?: number;
   onSaveStatusChange: (status: "saved" | "saving" | "unsaved") => void;
   onContentChange?: (path: string, markdown: string) => void;
   onFileSaved?: (path: string) => void;
@@ -37,7 +38,7 @@ interface Props {
   onEditorReady?: (scrollToPos: (pos: number) => void) => void;
 }
 
-export default function Editor({ filePath, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange, onWordCountChange, onHeadingsChange, onEditorReady }: Props) {
+export default function Editor({ filePath, revision, onSaveStatusChange, onContentChange, onFileSaved, initialContent, searchTerm, onFindBarVisibilityChange, onWordCountChange, onHeadingsChange, onEditorReady }: Props) {
   const currentPathRef = useRef(filePath);
   const initialContentRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
@@ -204,6 +205,53 @@ export default function Editor({ filePath, onSaveStatusChange, onContentChange, 
 
     if (editor) load();
   }, [filePath, editor]);
+
+  // Reload content on external file change (revision bump) without resetting scroll
+  const prevRevisionRef = useRef(revision);
+  useEffect(() => {
+    if (!editor || revision === undefined || revision === prevRevisionRef.current) {
+      prevRevisionRef.current = revision;
+      return;
+    }
+    prevRevisionRef.current = revision;
+
+    async function reload() {
+      try {
+        const content = await readFile(currentPathRef.current);
+        initialContentRef.current = content;
+        isLoadingRef.current = true;
+
+        // Save scroll position
+        const scrollEl = editor!.view.dom.closest(".editor-scroll");
+        const scrollTop = scrollEl?.scrollTop ?? 0;
+
+        const storage = editor!.storage as Record<string, any>;
+        if (storage.markdown?.parser) {
+          const parsed = storage.markdown.parser.parse(content);
+          editor!.chain().setContent(parsed).run();
+        } else {
+          editor!.chain().setContent(content).run();
+        }
+
+        // Restore scroll position after ProseMirror DOM update + browser layout
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (scrollEl) scrollEl.scrollTop = scrollTop;
+            isLoadingRef.current = false;
+          });
+        });
+
+        onSaveStatusChange("saved");
+        onWordCountChangeRef.current?.(computeWordCount(editor!.state.doc));
+        onHeadingsChangeRef.current?.(extractHeadings(editor!.state.doc));
+      } catch (e) {
+        isLoadingRef.current = false;
+        console.error("Failed to reload file:", e);
+      }
+    }
+
+    reload();
+  }, [revision, editor]);
 
   // Keyboard shortcuts: Cmd+F (find), Cmd+S (save)
   useEffect(() => {

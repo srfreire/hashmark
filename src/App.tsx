@@ -7,17 +7,27 @@ import ThemeToggle from "./components/ThemeToggle";
 import QuickOpen from "./components/QuickOpen";
 import CommandPalette from "./components/CommandPalette";
 import { FileNode } from "./types";
-import { loadFileTree, selectFolder, writeFile, getGitRoot, getGitStatus, getFileMtime } from "./services/filesystem";
+import { confirm } from "@tauri-apps/plugin-dialog";
+import { loadFileTree, selectFolder, writeFile, getGitRoot, getGitStatus, getFileMtime, renameItem, deleteItem, revealInFinder } from "./services/filesystem";
 
 function App() {
   const [rootPath, setRootPath] = useState<string | null>(null);
   const [files, setFiles] = useState<FileNode[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem("hashmark-dark-mode");
+    if (saved !== null) return saved === "true";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
   const [showNewFile, setShowNewFile] = useState(false);
-  const [sidebarView, setSidebarView] = useState<"files" | "search" | "outline">("files");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarView, setSidebarView] = useState<"files" | "search" | "outline">(() => {
+    const saved = localStorage.getItem("hashmark-sidebar-view");
+    return (saved === "files" || saved === "search" || saved === "outline") ? saved : "files";
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("hashmark-sidebar-collapsed") === "true";
+  });
   const [pendingSearchTerm, setPendingSearchTerm] = useState<string | undefined>(undefined);
   const [modifiedFiles, setModifiedFiles] = useState<Map<string, string>>(new Map());
   const [gitStatuses, setGitStatuses] = useState<Map<string, string>>(new Map());
@@ -41,12 +51,30 @@ function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("hashmark-dark-mode", String(dark));
   }, [dark]);
+
+  useEffect(() => {
+    localStorage.setItem("hashmark-sidebar-collapsed", String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem("hashmark-sidebar-view", sidebarView);
+  }, [sidebarView]);
+
+  useEffect(() => {
+    localStorage.setItem("hashmark-open-files", JSON.stringify(openFiles));
+  }, [openFiles]);
+
+  useEffect(() => {
+    if (activeFile) localStorage.setItem("hashmark-active-file", activeFile);
+    else localStorage.removeItem("hashmark-active-file");
+  }, [activeFile]);
 
   // Remember last folder
   useEffect(() => {
     const saved = localStorage.getItem("hashmark-last-folder");
-    if (saved) handleFolderSelect(saved);
+    if (saved) handleFolderSelect(saved, true);
   }, []);
 
   useEffect(() => {
@@ -67,10 +95,12 @@ function App() {
     }
   }, []);
 
-  const handleFolderSelect = useCallback(async (path: string) => {
+  const handleFolderSelect = useCallback(async (path: string, restoreSession = false) => {
     setRootPath(path);
-    setActiveFile(null);
-    setOpenFiles([]);
+    if (!restoreSession) {
+      setActiveFile(null);
+      setOpenFiles([]);
+    }
     await refreshTree(path);
     try {
       const root = await getGitRoot(path);
@@ -79,6 +109,30 @@ function App() {
       if (gitRepo) refreshGitStatus(path);
     } catch {
       setIsGitRepo(false);
+    }
+    if (restoreSession) {
+      try {
+        const savedFiles: string[] = JSON.parse(localStorage.getItem("hashmark-open-files") ?? "[]");
+        const validFiles: string[] = [];
+        for (const f of savedFiles) {
+          try {
+            await getFileMtime(f);
+            validFiles.push(f);
+          } catch { /* file no longer exists */ }
+        }
+        setOpenFiles(validFiles);
+        const savedActive = localStorage.getItem("hashmark-active-file");
+        if (savedActive && validFiles.includes(savedActive)) {
+          setActiveFile(savedActive);
+        } else if (validFiles.length > 0) {
+          setActiveFile(validFiles[0]);
+        } else {
+          setActiveFile(null);
+        }
+      } catch {
+        setActiveFile(null);
+        setOpenFiles([]);
+      }
     }
   }, [refreshTree, refreshGitStatus]);
 
@@ -149,6 +203,66 @@ function App() {
     });
     if (isGitRepo && rootPath) refreshGitStatus(rootPath);
   }, [isGitRepo, rootPath, refreshGitStatus]);
+
+  const handleRenameItem = useCallback(async (oldPath: string, newPath: string) => {
+    await renameItem(oldPath, newPath);
+    if (rootPath) refreshTree(rootPath);
+    // Update open tabs if the renamed file was open
+    setOpenFiles((prev) => prev.map((p) => {
+      if (p === oldPath) return newPath;
+      // Handle files inside a renamed folder
+      if (p.startsWith(oldPath + "/")) return newPath + p.slice(oldPath.length);
+      return p;
+    }));
+    setActiveFile((prev) => {
+      if (prev === oldPath) return newPath;
+      if (prev?.startsWith(oldPath + "/")) return newPath + prev.slice(oldPath.length);
+      return prev;
+    });
+    // Move modified file buffers
+    setModifiedFiles((prev) => {
+      const next = new Map<string, string>();
+      for (const [p, content] of prev) {
+        if (p === oldPath) next.set(newPath, content);
+        else if (p.startsWith(oldPath + "/")) next.set(newPath + p.slice(oldPath.length), content);
+        else next.set(p, content);
+      }
+      return next;
+    });
+  }, [rootPath, refreshTree]);
+
+  const handleDeleteItem = useCallback(async (path: string, isDirectory: boolean) => {
+    const name = path.split("/").pop() ?? path;
+    const confirmed = await confirm(
+      `Are you sure you want to delete "${name}"${isDirectory ? " and all its contents" : ""}?`,
+      { title: "Delete", kind: "warning" },
+    );
+    if (!confirmed) return;
+    await deleteItem(path);
+    if (rootPath) refreshTree(rootPath);
+    // Close tabs for deleted files
+    setOpenFiles((prev) => {
+      const next = prev.filter((p) => p !== path && !p.startsWith(path + "/"));
+      setActiveFile((current) => {
+        if (!current || current === path || current.startsWith(path + "/")) {
+          return next.length > 0 ? next[0] : null;
+        }
+        return current;
+      });
+      return next;
+    });
+    setModifiedFiles((prev) => {
+      const next = new Map(prev);
+      for (const p of next.keys()) {
+        if (p === path || p.startsWith(path + "/")) next.delete(p);
+      }
+      return next;
+    });
+  }, [rootPath, refreshTree]);
+
+  const handleRevealItem = useCallback(async (path: string) => {
+    await revealInFinder(path);
+  }, []);
 
   const saveAllFiles = useCallback(async () => {
     if (modifiedFiles.size === 0) return;
@@ -290,6 +404,9 @@ function App() {
         sidebarView={sidebarView}
         onSidebarViewChange={setSidebarView}
         onOpenFileAtMatch={handleOpenFileAtMatch}
+        onRenameItem={handleRenameItem}
+        onDeleteItem={handleDeleteItem}
+        onRevealItem={handleRevealItem}
         modifiedFiles={modifiedFilesSet}
         gitStatuses={gitStatuses}
         headings={headings}
@@ -335,11 +452,12 @@ function App() {
           {openFiles.length > 0 ? (
             openFiles.map((path) => (
               <div
-                key={`${path}:${fileRevisions.get(path) ?? 0}`}
+                key={path}
                 style={{ display: path === activeFile ? undefined : "none", width: "100%" }}
               >
                 <Editor
                   filePath={path}
+                  revision={fileRevisions.get(path) ?? 0}
                   onSaveStatusChange={(s) => { if (activeFileRef.current === path) setSaveStatus(s); }}
                   onContentChange={handleContentChange}
                   onFileSaved={handleFileSaved}

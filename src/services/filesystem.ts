@@ -1,5 +1,6 @@
 import { readDir, readTextFile, writeTextFile, mkdir, remove, rename, stat, DirEntry } from "@tauri-apps/plugin-fs";
 import { open } from "@tauri-apps/plugin-dialog";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { FileNode, SearchMatch, FileSearchResult } from "../types";
 
@@ -154,6 +155,10 @@ export async function searchInFiles(
   }
 
   return results;
+}
+
+export async function revealInFinder(path: string): Promise<void> {
+  await revealItemInDir(path);
 }
 
 export async function getFileMtime(filePath: string): Promise<number> {
