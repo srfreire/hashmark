@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import TabBar from "./components/TabBar";
@@ -71,10 +72,19 @@ function App() {
     else localStorage.removeItem("hashmark-active-file");
   }, [activeFile]);
 
-  // Remember last folder
+  // Open folder from CLI arg, or restore last session
   useEffect(() => {
-    const saved = localStorage.getItem("hashmark-last-folder");
-    if (saved) handleFolderSelect(saved, true);
+    invoke<string | null>("get_cli_folder").then((cliFolder) => {
+      if (cliFolder) {
+        handleFolderSelect(cliFolder);
+      } else {
+        const saved = localStorage.getItem("hashmark-last-folder");
+        if (saved) handleFolderSelect(saved, true);
+      }
+    }).catch(() => {
+      const saved = localStorage.getItem("hashmark-last-folder");
+      if (saved) handleFolderSelect(saved, true);
+    });
   }, []);
 
   useEffect(() => {

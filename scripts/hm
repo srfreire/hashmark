@@ -1,0 +1,13 @@
+#!/bin/sh
+# hm - Open Hashmark in a folder
+# Usage: hm [folder]  (defaults to current directory)
+
+folder="${1:-.}"
+
+# Resolve to absolute path
+path="$(cd "$folder" 2>/dev/null && pwd)" || {
+  echo "hm: not a directory: $folder" >&2
+  exit 1
+}
+
+open -a Hashmark --args "$path"

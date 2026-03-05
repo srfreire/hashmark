@@ -1,7 +1,17 @@
 use std::collections::HashMap;
 use std::process::Command;
+use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Emitter;
+
+struct CliState {
+    folder: Option<String>,
+}
+
+#[tauri::command]
+fn get_cli_folder(state: tauri::State<'_, Mutex<CliState>>) -> Option<String> {
+    state.lock().unwrap().folder.take()
+}
 
 #[tauri::command]
 fn get_git_root(repo_path: String) -> Result<Option<String>, String> {
@@ -76,11 +86,23 @@ fn get_git_status(repo_path: String) -> Result<HashMap<String, String>, String> 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let cli_folder = std::env::args().nth(1).and_then(|arg| {
+        let path = std::path::Path::new(&arg);
+        if path.is_dir() {
+            path.canonicalize()
+                .ok()
+                .map(|p| p.to_string_lossy().to_string())
+        } else {
+            None
+        }
+    });
+
     tauri::Builder::default()
+        .manage(Mutex::new(CliState { folder: cli_folder }))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_git_status, get_git_root])
+        .invoke_handler(tauri::generate_handler![get_git_status, get_git_root, get_cli_folder])
         .setup(|app| {
             let open_folder = MenuItemBuilder::with_id("open_folder", "Open Folder...")
                 .accelerator("CmdOrCtrl+O")
