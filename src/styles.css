@@ -1298,6 +1298,42 @@ html, body, #root {
   font-family: inherit;
 }
 
+/* ---- Mermaid Preview ---- */
+.tiptap pre:has(code.language-mermaid) {
+  display: none;
+}
+
+.mermaid-preview {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0.4em 0 0.8em;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-loading {
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text-tertiary);
+}
+
+.mermaid-error {
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #ef4444;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+
 /* ---- Theme Transition ---- */
 ::view-transition-old(root),
 ::view-transition-new(root) {

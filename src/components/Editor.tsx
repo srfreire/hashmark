@@ -20,6 +20,7 @@ import FindBar from "./FindBar";
 import SlashMenu from "./SlashMenu";
 import { SlashCommands, slashMenuItems } from "../extensions/slash-command";
 import { SearchAndReplace } from "../extensions/search-and-replace";
+import { MermaidPreview } from "../extensions/mermaid-preview";
 import { readFile, writeFile } from "../services/filesystem";
 
 const lowlight = createLowlight(common);
@@ -83,6 +84,7 @@ export default function Editor({ filePath, revision, onSaveStatusChange, onConte
       TableCell,
       TableHeader,
       SearchAndReplace,
+      MermaidPreview,
       Markdown.configure({
         html: true,
         tightLists: true,
@@ -182,16 +184,8 @@ export default function Editor({ filePath, revision, onSaveStatusChange, onConte
         initialContentRef.current = content;
         if (editor) {
           isLoadingRef.current = true;
-          // Use the markdown parser directly from storage
-          const storage = editor.storage as Record<string, any>;
-          if (storage.markdown?.parser) {
-            const parsed = storage.markdown.parser.parse(content);
-            // Use the base setContent (bypassing the markdown wrapper which may double-parse)
-            editor.chain().setContent(parsed).run();
-          } else {
-            // Fallback: pass content directly and let the Markdown extension handle it
-            editor.chain().setContent(content).run();
-          }
+          // Let the Markdown extension's setContent override handle parsing once
+          editor.chain().setContent(content).run();
           isLoadingRef.current = false;
           // If loaded from buffer, it's still unsaved
           onSaveStatusChange(initialContent !== undefined ? "unsaved" : "saved");
@@ -225,13 +219,7 @@ export default function Editor({ filePath, revision, onSaveStatusChange, onConte
         const scrollEl = editor!.view.dom.closest(".editor-scroll");
         const scrollTop = scrollEl?.scrollTop ?? 0;
 
-        const storage = editor!.storage as Record<string, any>;
-        if (storage.markdown?.parser) {
-          const parsed = storage.markdown.parser.parse(content);
-          editor!.chain().setContent(parsed).run();
-        } else {
-          editor!.chain().setContent(content).run();
-        }
+        editor!.chain().setContent(content).run();
 
         // Restore scroll position after ProseMirror DOM update + browser layout
         requestAnimationFrame(() => {
