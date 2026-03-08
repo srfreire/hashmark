@@ -3,6 +3,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Emitter;
+use tauri_plugin_fs::FsExt;
 
 struct CliState {
     folder: Option<String>,
@@ -84,6 +85,17 @@ fn get_git_status(repo_path: String) -> Result<HashMap<String, String>, String> 
     Ok(statuses)
 }
 
+#[tauri::command]
+fn allow_directory(window: tauri::Window, path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if let Some(scope) = window.try_fs_scope() {
+        scope
+            .allow_directory(p, true)
+            .map_err(|e: tauri::Error| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let cli_folder = std::env::args().nth(1).and_then(|arg| {
@@ -102,7 +114,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_git_status, get_git_root, get_cli_folder])
+        .invoke_handler(tauri::generate_handler![get_git_status, get_git_root, get_cli_folder, allow_directory])
         .setup(|app| {
             let open_folder = MenuItemBuilder::with_id("open_folder", "Open Folder...")
                 .accelerator("CmdOrCtrl+O")

@@ -111,6 +111,8 @@ function App() {
       setActiveFile(null);
       setOpenFiles([]);
     }
+    // Ensure recursive fs scope for CLI and session restore paths
+    try { await invoke("allow_directory", { path }); } catch { /* dialog already set scope */ }
     await refreshTree(path);
     try {
       const root = await getGitRoot(path);

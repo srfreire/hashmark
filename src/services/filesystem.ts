@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { FileNode, SearchMatch, FileSearchResult } from "../types";
 
 export async function selectFolder(): Promise<string | null> {
-  const selected = await open({ directory: true, multiple: false });
+  const selected = await open({ directory: true, multiple: false, recursive: true });
   return selected as string | null;
 }
 
