@@ -1,0 +1,59 @@
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+
+\section{Hashmark LaTeX Preview}
+
+This is a quick test of the new \textbf{side-by-side LaTeX preview} in Hashmark.
+You can write LaTeX on the left and watch it render on the right with a 300ms debounce.
+
+\subsection{Math support via KaTeX}
+
+Inline math: $E = mc^2$ and $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$.
+
+Display math:
+\[
+\int_0^\infty e^{-x^2}\, dx = \frac{\sqrt{\pi}}{2}
+\]
+
+Aligned equations:
+\begin{align*}
+(a+b)^2 &= a^2 + 2ab + b^2 \\
+(a-b)^2 &= a^2 - 2ab + b^2
+\end{align*}
+
+\subsection{Lists}
+
+Items I like:
+\begin{itemize}
+  \item \emph{Markdown} for writing
+  \item \textbf{LaTeX} for math-heavy notes
+  \item Nested:
+  \begin{itemize}
+    \item One
+    \item Two
+  \end{itemize}
+\end{itemize}
+
+Numbered:
+\begin{enumerate}
+  \item First
+  \item Second with code \texttt{like this}
+  \item Third
+\end{enumerate}
+
+\subsection{Links and quotes}
+
+Visit \href{https://example.com}{this link} or \url{https://hashmark.app}.
+
+\paragraph{A paragraph head} This is a paragraph-titled section with inline math $a^2 + b^2 = c^2$.
+
+\subsection{Edge cases}
+
+Special chars: 5 < 7, true \& false, 50\% off, \$10, snake\_case, \#hashtag.
+
+Unknown macro: \customcommand{this content still shows}.
+
+\cite{einstein1905} A reference placeholder.
+
+\end{document}
