@@ -1351,3 +1351,237 @@ html, body, #root {
     clip-path: circle(var(--theme-toggle-r) at var(--theme-toggle-x) var(--theme-toggle-y));
   }
 }
+
+/* --- LaTeX side-by-side view --- */
+
+.tex-view {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tex-view-pane {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.tex-view-source {
+  display: flex;
+  flex-direction: column;
+}
+
+.tex-source-editor {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tex-source-editor .cm-editor {
+  height: 100%;
+}
+
+.tex-source-editor .cm-scroller {
+  overflow: auto;
+}
+
+.tex-view-divider {
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.tex-view-divider:hover,
+.tex-view-divider:active {
+  background: var(--accent);
+}
+
+.tex-view-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-editor);
+}
+
+.tex-preview-pane {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  position: relative;
+  color: var(--text-primary);
+  background: var(--bg-editor);
+}
+
+.tex-preview-banner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.tex-preview-content {
+  padding: 32px 48px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: 800px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+
+.tex-preview-content h1,
+.tex-preview-content h2,
+.tex-preview-content h3,
+.tex-preview-content h4 {
+  color: var(--text-primary);
+  margin-top: 1.4em;
+  margin-bottom: 0.6em;
+  font-weight: 600;
+}
+
+.tex-preview-content h1 { font-size: 1.8em; }
+.tex-preview-content h2 { font-size: 1.45em; }
+.tex-preview-content h3 { font-size: 1.2em; }
+.tex-preview-content h4 { font-size: 1.05em; }
+
+.tex-preview-content p {
+  margin: 0.8em 0;
+}
+
+.tex-preview-content a {
+  color: var(--link);
+}
+
+.tex-preview-content ul,
+.tex-preview-content ol {
+  padding-left: 1.5em;
+  margin: 0.6em 0;
+}
+
+.tex-preview-content li {
+  margin: 0.25em 0;
+}
+
+.tex-preview-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+}
+
+.tex-preview-content pre,
+.tex-preview-content code {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.tex-preview-content pre {
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+
+.tex-preview-content code {
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+.tex-preview-content .tex-tabular {
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.tex-preview-content .tex-tabular td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+}
+
+.tex-preview-content .tex-env {
+  margin: 0.8em 0;
+}
+.tex-preview-content .tex-env-center {
+  text-align: center;
+}
+.tex-preview-content .tex-env-flushright {
+  text-align: right;
+}
+.tex-preview-content .tex-env-quote,
+.tex-preview-content .tex-env-quotation {
+  margin-left: 2em;
+  margin-right: 2em;
+  font-style: italic;
+}
+
+.tex-preview-content .tex-cite {
+  color: var(--text-tertiary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85em;
+}
+
+.tex-preview-content .tex-footnote {
+  color: var(--accent);
+  cursor: help;
+}
+
+.tex-preview-content .tex-math-error {
+  background: rgba(245, 158, 11, 0.15);
+  border-bottom: 1px dotted rgba(245, 158, 11, 0.6);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9em;
+  padding: 0 2px;
+  cursor: help;
+}
+
+.tex-preview-content .tex-title {
+  text-align: center;
+  margin-top: 0.4em;
+}
+.tex-preview-content .tex-author,
+.tex-preview-content .tex-date {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.tex-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  padding: 32px;
+  text-align: center;
+}
+
+.tex-view-error,
+.tex-view-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+/* KaTeX (math) sizing inside the preview */
+.tex-preview-content .katex {
+  font-size: 1.05em;
+}
+.tex-preview-content .katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* KaTeX color tweaks for dark mode */
+.dark .tex-preview-content .katex {
+  color: var(--text-primary);
+}
