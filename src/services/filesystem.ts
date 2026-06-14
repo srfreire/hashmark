@@ -28,9 +28,9 @@ async function buildTree(dirPath: string): Promise<FileNode[]> {
           children,
         });
       }
-    } else if (entry.name?.endsWith(".md")) {
+    } else if (entry.name && /\.(md|markdown|tex)$/i.test(entry.name)) {
       nodes.push({
-        name: entry.name!,
+        name: entry.name,
         path: fullPath,
         isDirectory: false,
       });
