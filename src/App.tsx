@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
+import TexView from "./components/TexView";
 import TabBar from "./components/TabBar";
 import ThemeToggle from "./components/ThemeToggle";
 import QuickOpen from "./components/QuickOpen";
@@ -462,25 +463,40 @@ function App() {
         <div id="find-bar-container" />
         <div className="editor-scroll" ref={editorScrollRef}>
           {openFiles.length > 0 ? (
-            openFiles.map((path) => (
-              <div
-                key={path}
-                style={{ display: path === activeFile ? undefined : "none", width: "100%" }}
-              >
-                <Editor
-                  filePath={path}
-                  revision={fileRevisions.get(path) ?? 0}
-                  onSaveStatusChange={(s) => { if (activeFileRef.current === path) setSaveStatus(s); }}
-                  onContentChange={handleContentChange}
-                  onFileSaved={handleFileSaved}
-                  initialContent={modifiedFiles.get(path)}
-                  searchTerm={path === activeFile ? pendingSearchTerm : undefined}
-                  onWordCountChange={(c) => { setWordCounts((prev) => new Map(prev).set(path, c)); }}
-                  onHeadingsChange={(h) => { setHeadingsMap((prev) => new Map(prev).set(path, h)); }}
-                  onEditorReady={(scrollFn) => { editorScrollFnsRef.current.set(path, scrollFn); }}
-                />
-              </div>
-            ))
+            openFiles.map((path) => {
+              const isTex = /\.tex$/i.test(path);
+              return (
+                <div
+                  key={path}
+                  style={{ display: path === activeFile ? undefined : "none", width: "100%", height: "100%" }}
+                >
+                  {isTex ? (
+                    <TexView
+                      filePath={path}
+                      revision={fileRevisions.get(path) ?? 0}
+                      onSaveStatusChange={(s) => { if (activeFileRef.current === path) setSaveStatus(s); }}
+                      onContentChange={handleContentChange}
+                      onFileSaved={handleFileSaved}
+                      initialContent={modifiedFiles.get(path)}
+                      onWordCountChange={(c) => { setWordCounts((prev) => new Map(prev).set(path, c)); }}
+                    />
+                  ) : (
+                    <Editor
+                      filePath={path}
+                      revision={fileRevisions.get(path) ?? 0}
+                      onSaveStatusChange={(s) => { if (activeFileRef.current === path) setSaveStatus(s); }}
+                      onContentChange={handleContentChange}
+                      onFileSaved={handleFileSaved}
+                      initialContent={modifiedFiles.get(path)}
+                      searchTerm={path === activeFile ? pendingSearchTerm : undefined}
+                      onWordCountChange={(c) => { setWordCounts((prev) => new Map(prev).set(path, c)); }}
+                      onHeadingsChange={(h) => { setHeadingsMap((prev) => new Map(prev).set(path, h)); }}
+                      onEditorReady={(scrollFn) => { editorScrollFnsRef.current.set(path, scrollFn); }}
+                    />
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="empty-state">
               <div className="empty-state-icon">
