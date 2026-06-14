@@ -11,6 +11,8 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "label",
   "ref",
   "pageref",
+  "eqref",
+  "nameref",
   "noindent",
   "centering",
   "newpage",
@@ -26,11 +28,14 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "medskip",
   "bigskip",
   "setlength",
+  "addtolength",
   "renewcommand",
   "newcommand",
   "providecommand",
   "DeclareMathOperator",
   "definecolor",
+  "color",
+  "textcolor",
   "input",
   "include",
   "bibliography",
@@ -52,6 +57,22 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "lfoot",
   "rfoot",
   "cfoot",
+  "addcontentsline",
+  "addtocontents",
+  "phantomsection",
+  "protect",
+  "relax",
+  "par",
+  "frontmatter",
+  "mainmatter",
+  "backmatter",
+  "appendix",
+  "captionsetup",
+  "caption",
+  "graphicspath",
+  "usepackage",
+  "documentclass",
+  "geometry",
 ]);
 
 const ENV_DROP = new Set([
@@ -482,19 +503,24 @@ class Parser {
       return ""; // handled inside \begin
     }
 
-    // Drop these silently
+    // Drop these silently — consume all chained {...} args
     if (VOID_COMMANDS_TO_DROP.has(name)) {
-      // Consume optional + one mandatory arg if present (best effort)
       this.readOptional();
-      if (this.peek() === "{") this.readGroup();
+      while (this.peek() === "{") this.readGroup();
       return "";
     }
 
-    // Unknown command: consume optional + first mandatory arg as visible content
+    // Unknown command: consume optional. Then count chained {...} groups.
+    //   - 0 args → nothing
+    //   - 1 arg  → render the group content (likely a custom display macro)
+    //   - 2+ args → machinery (e.g. \addcontentsline-like); drop all
     this.readOptional();
-    if (this.peek() === "{") {
-      const inner = this.readGroup();
-      const sub = new Parser(inner, this.ctx);
+    const groups: string[] = [];
+    while (this.peek() === "{") {
+      groups.push(this.readGroup());
+    }
+    if (groups.length === 1) {
+      const sub = new Parser(groups[0], this.ctx);
       return sub.renderAll();
     }
     return "";

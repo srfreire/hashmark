@@ -1585,3 +1585,104 @@ html, body, #root {
 .dark .tex-preview-content .katex {
   color: var(--text-primary);
 }
+
+/* --- CodeMirror search panel styling (used in .tex view) --- */
+
+.tex-source-editor .cm-panels {
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+}
+
+.tex-source-editor .cm-panel.cm-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+.tex-source-editor .cm-panel.cm-search br {
+  display: none;
+}
+
+.tex-source-editor .cm-panel.cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.tex-source-editor .cm-panel.cm-search label:hover {
+  background: var(--bg-sidebar-hover);
+}
+
+.tex-source-editor .cm-panel.cm-search input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.tex-source-editor .cm-panel.cm-search input.cm-textfield,
+.tex-source-editor .cm-panel.cm-search .cm-textfield {
+  background: var(--bg-editor);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  min-width: 180px;
+  transition: border-color 0.15s;
+}
+.tex-source-editor .cm-panel.cm-search .cm-textfield:focus {
+  border-color: var(--accent);
+}
+
+.tex-source-editor .cm-panel.cm-search button,
+.tex-source-editor .cm-panel.cm-search .cm-button {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background-image: none;
+  text-transform: none;
+}
+.tex-source-editor .cm-panel.cm-search button:hover,
+.tex-source-editor .cm-panel.cm-search .cm-button:hover {
+  background: var(--bg-sidebar-hover);
+  border-color: var(--text-tertiary);
+}
+.tex-source-editor .cm-panel.cm-search button:active,
+.tex-source-editor .cm-panel.cm-search .cm-button:active {
+  background: var(--bg-sidebar-active);
+}
+
+.tex-source-editor .cm-panel.cm-search [name="close"] {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tex-source-editor .cm-panel.cm-search [name="close"]:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-primary);
+  border: none;
+}
