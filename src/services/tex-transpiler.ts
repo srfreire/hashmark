@@ -106,10 +106,40 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "lstinputlisting",
   "hypersetup",
   "urlstyle",
+  "today",
+  "ldots",
+  "dots",
+  "textellipsis",
+  "TeX",
+  "LaTeX",
+  "LaTeXe",
+  "and",
+  "endinput",
+  "raggedright",
+  "raggedleft",
+  "leftline",
+  "rightline",
   "ifx",
   "fi",
   "else",
   "@ifundefined",
+  "pagenumbering",
+  "headheight",
+  "topmargin",
+  "oddsidemargin",
+  "evensidemargin",
+  "textwidth",
+  "textheight",
+  "marginparwidth",
+  "footnotemark",
+  "footnotetext",
+  "newtheorem",
+  "theoremstyle",
+  "linespread",
+  "baselineskip",
+  "baselinestretch",
+  "renewenvironment",
+  "newenvironment",
 ]);
 
 const ENV_DROP = new Set([
@@ -155,6 +185,8 @@ function escapeHtml(s: string): string {
 }
 
 // LaTeX-style typography: ``X'' → curly double, `X' → curly single, ---/-- → em/en dashes.
+// Also converts `~` (non-breaking space) to a regular space — this is text-flow only,
+// not the `\~` command (which my command handler emits as `&nbsp;`).
 // Applied to plain text segments only (not inside math or verbatim).
 function applyTypography(s: string): string {
   return s
@@ -164,7 +196,9 @@ function applyTypography(s: string): string {
     .replace(/''/g, "”")
     .replace(/`/g, "‘")
     // Right single quote: an apostrophe between letters or at end of a word.
-    .replace(/(\w)'/g, "$1’");
+    .replace(/(\w)'/g, "$1’")
+    // Non-breaking space tilde (use a regular space — preserving non-breaking is overkill here)
+    .replace(/~/g, " ");
 }
 
 function escapeAttr(s: string): string {
@@ -361,27 +395,51 @@ class Parser {
     return out;
   }
 
-  renderTabular(): string {
-    // Minimal tabular: rows separated by \\, cells separated by &.
-    // Consume the column spec argument first.
+  renderTabular(envName = "tabular"): string {
+    // tabular: rows separated by \\, cells separated by &. Consume column spec first.
     this.readOptional();
     this.readGroup();
-    // Now render the body until \end{tabular}
-    let body = "";
+    const endMarker = "\\end{" + envName + "}";
+    const rows: string[][] = [[]];
+    let cell = "";
+    const pushCell = () => { rows[rows.length - 1].push(cell); cell = ""; };
+    const newRow = () => { rows.push([]); };
     while (!this.eof()) {
-      if (this.startsWith("\\end{tabular}")) {
-        this.pos += "\\end{tabular}".length;
+      if (this.startsWith(endMarker)) {
+        this.pos += endMarker.length;
         break;
       }
-      body += this.renderOne();
+      // Row separator: \\ or \\[skip]
+      if (this.startsWith("\\\\")) {
+        this.pos += 2;
+        this.readOptional();
+        pushCell();
+        newRow();
+        continue;
+      }
+      // Column separator (unescaped &)
+      if (this.peek() === "&") {
+        this.pos++;
+        pushCell();
+        continue;
+      }
+      // Drop horizontal rules silently
+      if (this.startsWith("\\hline") || this.startsWith("\\toprule") || this.startsWith("\\midrule") || this.startsWith("\\bottomrule")) {
+        const m = this.src.slice(this.pos).match(/^\\(hline|toprule|midrule|bottomrule)\b/);
+        if (m) { this.pos += m[0].length; continue; }
+      }
+      if (this.startsWith("\\cline")) {
+        this.pos += "\\cline".length;
+        this.readGroup();
+        continue;
+      }
+      cell += this.renderOne();
     }
-    // Split into rows on \\ (in HTML output that's two backslashes? No — renderOne emits text)
-    // Actually we let \\ become a literal token. We'll insert a row marker for \\.
-    // Simpler: split body on a sentinel we never produce. Use the rendered output where \\ was passed.
-    // Since renderOne for \\ emits <br>, we have <br> as row separators.
-    const rows = body.split("<br>").map((r) => r.trim()).filter((r) => r.length > 0);
-    const cells = rows.map((r) => r.split("&").map((c) => `<td>${c.trim()}</td>`).join(""));
-    return `<table class="tex-tabular">${cells.map((c) => `<tr>${c}</tr>`).join("")}</table>`;
+    if (cell.trim().length > 0) pushCell();
+    return `<table class="tex-tabular">${rows
+      .filter((r) => r.some((c) => c.trim().length > 0))
+      .map((r) => `<tr>${r.map((c) => `<td>${c.trim()}</td>`).join("")}</tr>`)
+      .join("")}</table>`;
   }
 
   // Render a single token. Returns its HTML.
@@ -460,11 +518,27 @@ class Parser {
       return sub.renderAll();
     }
 
+    // Special LaTeX chars that should end a plain-text run:
+    //   \  start of command
+    //   {  open group
+    //   }  close group
+    //   $  math delimiter
+    //   &  alignment/column separator (renderTabular peeks for it BEFORE calling renderOne;
+    //      outside tabular it has no meaning, but we surface it as a literal `&amp;`)
+    //   %  comment (already stripped, but be safe)
+    if (this.peek() === "&") {
+      this.pos++;
+      return "&amp;";
+    }
+    if (this.peek() === "%") {
+      this.pos++;
+      return "";
+    }
     // Plain text run: read until next special char, then apply typography
     const start = this.pos;
     while (!this.eof()) {
       const c = this.peek();
-      if (c === "\\" || c === "{" || c === "}" || c === "$") break;
+      if (c === "\\" || c === "{" || c === "}" || c === "$" || c === "&" || c === "%") break;
       this.pos++;
     }
     if (this.pos === start) {
@@ -484,19 +558,24 @@ class Parser {
     if (name === " " || name === "," || name === ";" || name === "!" || name === ":") return " ";
     if (name === "~") return "&nbsp;";
 
-    // Headings
-    if (name === "section") return `<h2>${escapeHtml(this.readGroup())}</h2>`;
-    if (name === "section*") return `<h2>${escapeHtml(this.readGroup())}</h2>`;
-    if (name === "subsection" || name === "subsection*") return `<h3>${escapeHtml(this.readGroup())}</h3>`;
-    if (name === "subsubsection" || name === "subsubsection*") return `<h4>${escapeHtml(this.readGroup())}</h4>`;
+    // Headings — sub-parse args so nested \textit/\textbf etc. render correctly.
+    // section/chapter/etc. may carry an optional [short title] before the mandatory arg.
+    if (name === "section" || name === "section*") { this.readOptional(); return `<h2>${this.renderArg()}</h2>`; }
+    if (name === "subsection" || name === "subsection*") { this.readOptional(); return `<h3>${this.renderArg()}</h3>`; }
+    if (name === "subsubsection" || name === "subsubsection*") { this.readOptional(); return `<h4>${this.renderArg()}</h4>`; }
     if (name === "paragraph" || name === "paragraph*") {
-      const txt = this.readGroup();
-      return `<p class="tex-paragraph"><strong>${escapeHtml(txt)}</strong></p>`;
+      this.readOptional();
+      return `<p class="tex-paragraph"><strong>${this.renderArg()}</strong></p>`;
     }
-    if (name === "chapter" || name === "chapter*") return `<h1>${escapeHtml(this.readGroup())}</h1>`;
-    if (name === "title") return `<h1 class="tex-title">${escapeHtml(this.readGroup())}</h1>`;
-    if (name === "author") return `<p class="tex-author">${escapeHtml(this.readGroup())}</p>`;
-    if (name === "date") return `<p class="tex-date">${escapeHtml(this.readGroup())}</p>`;
+    if (name === "subparagraph" || name === "subparagraph*") {
+      this.readOptional();
+      return `<p class="tex-paragraph"><strong>${this.renderArg()}</strong></p>`;
+    }
+    if (name === "chapter" || name === "chapter*") { this.readOptional(); return `<h1>${this.renderArg()}</h1>`; }
+    if (name === "part" || name === "part*") { this.readOptional(); return `<h1>${this.renderArg()}</h1>`; }
+    if (name === "title") return `<h1 class="tex-title">${this.renderArg()}</h1>`;
+    if (name === "author") return `<p class="tex-author">${this.renderArg()}</p>`;
+    if (name === "date") return `<p class="tex-date">${this.renderArg()}</p>`;
 
     // Emphasis (commands that take an argument: \textbf{X}, \textit{X}, \emph{X})
     if (name === "textbf") return `<strong>${this.renderArg()}</strong>`;
@@ -660,7 +739,7 @@ class Parser {
 
     if (env === "tabular" || env === "tabularx" || env === "array") {
       if (env === "tabularx") this.readGroup(); // width
-      return this.renderTabular();
+      return this.renderTabular(env);
     }
 
     if (env === "document") {
