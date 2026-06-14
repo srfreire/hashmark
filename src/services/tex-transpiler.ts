@@ -156,8 +156,26 @@ const ENV_PASSTHROUGH_BLOCK = new Set([
   "quotation",
   "verse",
   "figure",
+  "figure*",
   "table",
+  "table*",
   "minipage",
+  // Beamer
+  "frame",
+  "columns",
+  "column",
+  "block",
+  "exampleblock",
+  "alertblock",
+  "definition",
+  "theorem",
+  "lemma",
+  "proof",
+  "corollary",
+  "proposition",
+  "example",
+  "remark",
+  "note",
 ]);
 
 const MATH_ENVS = new Set([
@@ -203,6 +221,12 @@ function applyTypography(s: string): string {
 
 function escapeAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+// Unescape common LaTeX escapes used inside "verbatim-ish" args (texttt, url, href).
+// Converts \_, \&, \#, \$, \%, \~, \^ to their literal characters.
+function unescapeLatexBasic(s: string): string {
+  return s.replace(/\\([_&#$%~^{}])/g, "$1");
 }
 
 function stripComments(src: string): string {
@@ -282,6 +306,19 @@ class Parser {
       this.pos++;
     }
     return this.src.slice(start + 1);
+  }
+
+  // Skip Beamer-style overlay specifiers like <2>, <2->, <1-3>
+  skipOverlay(): void {
+    const save = this.pos;
+    while (!this.eof() && /\s/.test(this.peek())) this.pos++;
+    if (this.peek() !== "<") { this.pos = save; return; }
+    const end = this.src.indexOf(">", this.pos);
+    if (end === -1) { this.pos = save; return; }
+    // Only treat as overlay if the content looks like digits/dashes/commas
+    const inner = this.src.slice(this.pos + 1, end);
+    if (!/^[\d,\-+ \s]+$/.test(inner)) { this.pos = save; return; }
+    this.pos = end + 1;
   }
 
   // Read an optional [...] argument. Returns the inner text or null if absent.
@@ -581,7 +618,7 @@ class Parser {
     if (name === "textbf") return `<strong>${this.renderArg()}</strong>`;
     if (name === "textit" || name === "emph") return `<em>${this.renderArg()}</em>`;
     if (name === "underline") return `<u>${this.renderArg()}</u>`;
-    if (name === "texttt") return `<code>${escapeHtml(this.readGroup())}</code>`;
+    if (name === "texttt") return `<code>${escapeHtml(unescapeLatexBasic(this.readGroup()))}</code>`;
     if (name === "textsc") return `<span style="font-variant: small-caps">${this.renderArg()}</span>`;
     if (name === "textsf") return `<span style="font-family: sans-serif">${this.renderArg()}</span>`;
     if (name === "textrm") return `<span>${this.renderArg()}</span>`;
@@ -598,12 +635,12 @@ class Parser {
 
     // Links
     if (name === "href") {
-      const url = this.readGroup();
+      const url = unescapeLatexBasic(this.readGroup());
       const text = this.renderArg();
       return `<a href="${escapeAttr(url)}">${text}</a>`;
     }
     if (name === "url") {
-      const url = this.readGroup();
+      const url = unescapeLatexBasic(this.readGroup());
       return `<a href="${escapeAttr(url)}">${escapeHtml(url)}</a>`;
     }
     if (name === "hyperref") {
@@ -614,6 +651,7 @@ class Parser {
 
     // Images
     if (name === "includegraphics") {
+      this.skipOverlay(); // Beamer: \includegraphics<2>[...]{...}
       this.readOptional();
       const src = this.readGroup();
       const resolved = resolveImageSrc(src, this.ctx.baseDir, this.ctx.convertPath);
@@ -634,6 +672,8 @@ class Parser {
     // Environments
     if (name === "begin") {
       const env = this.readGroup();
+      // Absorb Beamer-style overlay specifier <2-> after \begin{env}
+      this.skipOverlay();
       return this.renderEnvironment(env);
     }
     if (name === "end") {
@@ -758,13 +798,22 @@ class Parser {
     }
 
     if (ENV_PASSTHROUGH_BLOCK.has(env)) {
-      // Absorb placement specifiers like [H], [!htbp]
-      if (env === "figure" || env === "table" || env === "wrapfigure" || env === "wraptable") {
-        this.readOptional();
-        if (env === "wrapfigure" || env === "wraptable") {
-          this.readGroup(); // position arg
-          this.readGroup(); // width arg
-        }
+      // Absorb optional args / placement specifiers ([H], [!htbp], [plain], [t], etc.)
+      this.readOptional();
+      // Some envs take a mandatory width or title arg
+      if (env === "wrapfigure" || env === "wraptable") {
+        this.readGroup(); // position
+        this.readGroup(); // width
+      } else if (env === "minipage" || env === "column") {
+        this.readGroup(); // width
+      } else if (env === "frame") {
+        // Beamer frame may have a {title}{subtitle} after [plain]
+        if (this.peek() === "{") this.readGroup();
+        if (this.peek() === "{") this.readGroup();
+      } else if (env === "block" || env === "exampleblock" || env === "alertblock") {
+        if (this.peek() === "{") this.readGroup(); // title
+      } else if (env === "columns") {
+        // no extra args
       }
       const inner = this.renderUntilEndOf(env);
       const cls = `tex-env tex-env-${env}`;
