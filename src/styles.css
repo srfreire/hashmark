@@ -1686,3 +1686,36 @@ html, body, #root {
   color: var(--text-primary);
   border: none;
 }
+
+.tex-preview-content .tex-include-placeholder {
+  margin: 8px 0;
+  padding: 6px 12px;
+  background: var(--bg-sidebar);
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--text-tertiary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.tex-preview-content .tex-bibliography {
+  list-style: decimal;
+  padding-left: 2.5em;
+  font-size: 0.95em;
+}
+.tex-preview-content .tex-bibliography li {
+  margin: 0.6em 0;
+  line-height: 1.5;
+}
+
+.tex-preview-content .tex-caption {
+  display: block;
+  margin-top: 0.4em;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  text-align: center;
+  font-style: italic;
+}
+
+.tex-preview-content figcaption.tex-caption {
+  font-style: italic;
+}

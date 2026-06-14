@@ -36,8 +36,6 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "definecolor",
   "color",
   "textcolor",
-  "input",
-  "include",
   "bibliography",
   "bibliographystyle",
   "maketitle",
@@ -68,11 +66,50 @@ const VOID_COMMANDS_TO_DROP = new Set([
   "backmatter",
   "appendix",
   "captionsetup",
-  "caption",
   "graphicspath",
   "usepackage",
   "documentclass",
   "geometry",
+  "markboth",
+  "markright",
+  "index",
+  "nocite",
+  "cleardoublepage",
+  "newgeometry",
+  "restoregeometry",
+  "fontsize",
+  "selectfont",
+  "small",
+  "footnotesize",
+  "normalsize",
+  "large",
+  "Large",
+  "LARGE",
+  "huge",
+  "Huge",
+  "tiny",
+  "scriptsize",
+  "rule",
+  "vrule",
+  "hrule",
+  "newcounter",
+  "stepcounter",
+  "setcounter",
+  "addtocounter",
+  "value",
+  "DeclareUnicodeCharacter",
+  "DeclareRobustCommand",
+  "ProvideTextCommand",
+  "DeclareTextCommand",
+  "lstdefinestyle",
+  "lstset",
+  "lstinputlisting",
+  "hypersetup",
+  "urlstyle",
+  "ifx",
+  "fi",
+  "else",
+  "@ifundefined",
 ]);
 
 const ENV_DROP = new Set([
@@ -115,6 +152,19 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+// LaTeX-style typography: ``X'' → curly double, `X' → curly single, ---/-- → em/en dashes.
+// Applied to plain text segments only (not inside math or verbatim).
+function applyTypography(s: string): string {
+  return s
+    .replace(/---/g, "—")
+    .replace(/--/g, "–")
+    .replace(/``/g, "“")
+    .replace(/''/g, "”")
+    .replace(/`/g, "‘")
+    // Right single quote: an apostrophe between letters or at end of a word.
+    .replace(/(\w)'/g, "$1’");
 }
 
 function escapeAttr(s: string): string {
@@ -410,10 +460,19 @@ class Parser {
       return sub.renderAll();
     }
 
-    // Plain text
-    const c = this.peek();
-    this.pos++;
-    return escapeHtml(c);
+    // Plain text run: read until next special char, then apply typography
+    const start = this.pos;
+    while (!this.eof()) {
+      const c = this.peek();
+      if (c === "\\" || c === "{" || c === "}" || c === "$") break;
+      this.pos++;
+    }
+    if (this.pos === start) {
+      // Shouldn't happen, but be safe: consume one char to avoid infinite loop.
+      this.pos++;
+      return escapeHtml(this.src.slice(start, this.pos));
+    }
+    return applyTypography(escapeHtml(this.src.slice(start, this.pos)));
   }
 
   renderCommand(name: string): string {
@@ -439,14 +498,24 @@ class Parser {
     if (name === "author") return `<p class="tex-author">${escapeHtml(this.readGroup())}</p>`;
     if (name === "date") return `<p class="tex-date">${escapeHtml(this.readGroup())}</p>`;
 
-    // Emphasis
-    if (name === "textbf" || name === "bf") return `<strong>${this.renderArg()}</strong>`;
-    if (name === "textit" || name === "it" || name === "emph" || name === "em") return `<em>${this.renderArg()}</em>`;
+    // Emphasis (commands that take an argument: \textbf{X}, \textit{X}, \emph{X})
+    if (name === "textbf") return `<strong>${this.renderArg()}</strong>`;
+    if (name === "textit" || name === "emph") return `<em>${this.renderArg()}</em>`;
     if (name === "underline") return `<u>${this.renderArg()}</u>`;
-    if (name === "texttt" || name === "tt") return `<code>${escapeHtml(this.readGroup())}</code>`;
-    if (name === "textsc" || name === "sc") return `<span style="font-variant: small-caps">${this.renderArg()}</span>`;
-    if (name === "textsf" || name === "sf") return `<span style="font-family: sans-serif">${this.renderArg()}</span>`;
-    if (name === "textrm" || name === "rm") return `<span>${this.renderArg()}</span>`;
+    if (name === "texttt") return `<code>${escapeHtml(this.readGroup())}</code>`;
+    if (name === "textsc") return `<span style="font-variant: small-caps">${this.renderArg()}</span>`;
+    if (name === "textsf") return `<span style="font-family: sans-serif">${this.renderArg()}</span>`;
+    if (name === "textrm") return `<span>${this.renderArg()}</span>`;
+
+    // Font-switch commands inside a group: {\bf X} → render rest of current parser as bold.
+    // These don't take an argument — they affect everything following them in the current scope.
+    if (name === "bf" || name === "bfseries") return `<strong>${this.renderRest()}</strong>`;
+    if (name === "it" || name === "itshape" || name === "em") return `<em>${this.renderRest()}</em>`;
+    if (name === "sl" || name === "slshape") return `<em>${this.renderRest()}</em>`;
+    if (name === "tt" || name === "ttfamily") return `<code>${escapeHtml(this.src.slice(this.pos))}</code>${(this.pos = this.src.length, "")}`;
+    if (name === "sc" || name === "scshape") return `<span style="font-variant: small-caps">${this.renderRest()}</span>`;
+    if (name === "sf" || name === "sffamily") return `<span style="font-family: sans-serif">${this.renderRest()}</span>`;
+    if (name === "rm" || name === "rmfamily") return `<span>${this.renderRest()}</span>`;
 
     // Links
     if (name === "href") {
@@ -497,6 +566,25 @@ class Parser {
       // Stray \item outside of a list — treat as bullet.
       return "<br>• ";
     }
+    if (name === "bibitem") {
+      // Stray \bibitem outside thebibliography — rare. Drop the key and continue.
+      this.readOptional();
+      this.readGroup();
+      return "";
+    }
+
+    // Captions: render inline as a figcaption-like paragraph
+    if (name === "caption" || name === "captionof") {
+      if (name === "captionof") this.readGroup(); // type arg
+      this.readOptional(); // short caption
+      return `<figcaption class="tex-caption">${this.renderArg()}</figcaption>`;
+    }
+
+    // Includes: render a placeholder so master files (e.g. traballo.tex) are visibly non-empty.
+    if (name === "input" || name === "include") {
+      const path = this.readGroup();
+      return `<div class="tex-include-placeholder">↘ <code>${escapeHtml(path)}</code></div>`;
+    }
 
     // Math envs as fallback if encountered without \begin (shouldn't happen but safe)
     if (MATH_ENVS.has(name)) {
@@ -533,6 +621,15 @@ class Parser {
     return sub.renderAll();
   }
 
+  // Consume the rest of the current parser's input as a single rendered string.
+  // Used by font-switch commands like \bf, \it that scope to their enclosing group.
+  renderRest(): string {
+    const rest = this.src.slice(this.pos);
+    this.pos = this.src.length;
+    const sub = new Parser(rest, this.ctx);
+    return sub.renderAll();
+  }
+
   renderEnvironment(env: string): string {
     // Math environments
     if (MATH_ENVS.has(env)) {
@@ -554,6 +651,7 @@ class Parser {
       return `<ul>${this.renderItems(env)}</ul>`;
     }
     if (env === "enumerate") {
+      this.readOptional(); // enumerate options like [label=...]
       return `<ol>${this.renderItems(env)}</ol>`;
     }
     if (env === "description") {
@@ -570,12 +668,25 @@ class Parser {
       return this.renderUntilEndOf(env);
     }
 
+    if (env === "thebibliography") {
+      this.readGroup(); // widest label, e.g. {99}
+      return `<ol class="tex-bibliography">${this.renderBibitems()}</ol>`;
+    }
+
     if (ENV_DROP.has(env)) {
       this.readRawUntilEndOf(env);
       return "";
     }
 
     if (ENV_PASSTHROUGH_BLOCK.has(env)) {
+      // Absorb placement specifiers like [H], [!htbp]
+      if (env === "figure" || env === "table" || env === "wrapfigure" || env === "wraptable") {
+        this.readOptional();
+        if (env === "wrapfigure" || env === "wraptable") {
+          this.readGroup(); // position arg
+          this.readGroup(); // width arg
+        }
+      }
       const inner = this.renderUntilEndOf(env);
       const cls = `tex-env tex-env-${env}`;
       return `<div class="${cls}">${inner}</div>`;
@@ -583,6 +694,34 @@ class Parser {
 
     // Unknown env: render contents inline, ignoring the env wrapper
     return this.renderUntilEndOf(env);
+  }
+
+  renderBibitems(): string {
+    let out = "";
+    let buf = "";
+    let started = false;
+    const flush = () => {
+      if (started) out += `<li>${buf.trim()}</li>`;
+      buf = "";
+    };
+    while (!this.eof()) {
+      if (this.startsWith("\\end{thebibliography}")) {
+        this.pos += "\\end{thebibliography}".length;
+        flush();
+        return out;
+      }
+      if (this.startsWith("\\bibitem")) {
+        this.pos += "\\bibitem".length;
+        this.readOptional();
+        this.readGroup();
+        flush();
+        started = true;
+        continue;
+      }
+      buf += this.renderOne();
+    }
+    flush();
+    return out;
   }
 
   renderAll(): string {
