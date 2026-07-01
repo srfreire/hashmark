@@ -143,7 +143,6 @@ const VOID_COMMANDS_TO_DROP = new Set([
 ]);
 
 const ENV_DROP = new Set([
-  "titlepage",
   "abstract",
   "thebibliography",
 ]);
@@ -160,6 +159,7 @@ const ENV_PASSTHROUGH_BLOCK = new Set([
   "table",
   "table*",
   "minipage",
+  "titlepage",
   // Beamer
   "frame",
   "columns",
@@ -227,6 +227,17 @@ function escapeAttr(s: string): string {
 // Converts \_, \&, \#, \$, \%, \~, \^ to their literal characters.
 function unescapeLatexBasic(s: string): string {
   return s.replace(/\\([_&#$%~^{}])/g, "$1");
+}
+
+// Break hints inside verbatim-ish args (\allowbreak, \-, \/) produce no glyph in
+// LaTeX — they only mark where a line may break. Map \allowbreak/\linebreak to a
+// zero-width space (a break opportunity that survives escapeHtml) and drop the rest.
+function stripBreakHints(s: string): string {
+  return s
+    .replace(/\\allowbreak\s*/g, "​")
+    .replace(/\\(?:linebreak|break|newline)\b\s*/g, "​")
+    .replace(/\\-/g, "")
+    .replace(/\\\//g, "");
 }
 
 function stripComments(src: string): string {
@@ -618,7 +629,7 @@ class Parser {
     if (name === "textbf") return `<strong>${this.renderArg()}</strong>`;
     if (name === "textit" || name === "emph") return `<em>${this.renderArg()}</em>`;
     if (name === "underline") return `<u>${this.renderArg()}</u>`;
-    if (name === "texttt") return `<code>${escapeHtml(unescapeLatexBasic(this.readGroup()))}</code>`;
+    if (name === "texttt") return `<code>${escapeHtml(stripBreakHints(unescapeLatexBasic(this.readGroup())))}</code>`;
     if (name === "textsc") return `<span style="font-variant: small-caps">${this.renderArg()}</span>`;
     if (name === "textsf") return `<span style="font-family: sans-serif">${this.renderArg()}</span>`;
     if (name === "textrm") return `<span>${this.renderArg()}</span>`;
